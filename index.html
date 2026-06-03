@@ -484,7 +484,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, increment, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
 
@@ -877,10 +877,10 @@
             }
         }
 
-        async function authenticateUser() {
+        async function initAuth() {
             if (!auth) return false;
             try {
-                // Supporto per token personalizzati in ambiente Canvas
+                // Supporto per token personalizzati in ambiente Canvas obbligatorio PRIMA di qualsiasi query
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
@@ -903,8 +903,8 @@
             }
 
             if (!state.userId) {
-                const authed = await authenticateUser();
-                if (!authed) return;
+                showAlert("Errore Autenticazione", "Accesso al server in corso, riprova tra un istante.");
+                return;
             }
 
             state.userName = name;
@@ -1478,9 +1478,9 @@
             els.leaderboardLoading.classList.remove('hidden');
             els.leaderboardContainer.classList.add('hidden');
             
-            // Autenticazione anonima necessaria per leggere se non siamo già loggati
             if (!state.userId) {
-                await authenticateUser();
+                els.leaderboardLoading.textContent = "Errore di accesso al server.";
+                return;
             }
 
             try {
@@ -1584,6 +1584,16 @@
             initTrainerSelectorUI();
             await loadPokemonData();
             initPokedex(); // Pokedex is instantly available for the Main Menu
+            
+            // Autenticazione Firebase Obbligatoria Iniziale prima di ogni cosa
+            await initAuth();
+            
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    state.userId = user.uid;
+                }
+            });
+
             switchScreen('login');
             console.log("PokéBingo Ready & Patched!");
         }
