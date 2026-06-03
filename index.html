@@ -897,7 +897,7 @@
             }
 
             if (!state.userId) {
-                const authed = await authenticateUser();
+                const authed = await initAuth();
                 if (!authed) return;
             }
 
