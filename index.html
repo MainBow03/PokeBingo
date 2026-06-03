@@ -484,32 +484,28 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, increment, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
 
-        // Firebase Setup per Canvas Environment
+        // Firebase Setup per GitHub Pages
         let app, db, auth, analytics;
-        let appId = 'default-app-id';
+
+        // 👇👇👇 INCOLLA QUI LA TUA CONFIGURAZIONE FIREBASE 👇👇👇
+        const firebaseConfig = {
+            apiKey: "INCOLLA_LA_TUA_API_KEY",
+            authDomain: "IL_TUO_PROGETTO.firebaseapp.com",
+            projectId: "IL_TUO_PROGETTO",
+            storageBucket: "IL_TUO_PROGETTO.firebasestorage.app",
+            messagingSenderId: "INCOLLA_IL_MESSAGING_ID",
+            appId: "INCOLLA_IL_TUO_APP_ID"
+        };
+        // 👆👆👆 ------------------------------------------ 👆👆👆
 
         try {
-            // Usa la configurazione di ambiente se disponibile, altrimenti usa quella di fallback
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-                apiKey: "AIzaSyAA2xFmBHzybQH1EbS0coekBZBUy2VJ0lU",
-                authDomain: "pokebingo-538bd.firebaseapp.com",
-                projectId: "pokebingo-538bd",
-                storageBucket: "pokebingo-538bd.firebasestorage.app",
-                messagingSenderId: "271557483927",
-                appId: "1:271557483927:web:d752c7d1aab6093150b8d2",
-                measurementId: "G-PC7QE0ZS5Q"
-            };
-            
-            appId = typeof __app_id !== 'undefined' ? __app_id : 'pokebingo-538bd';
-
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
-            analytics = getAnalytics(app);
         } catch(e) {
             console.error("Errore inizializzazione Firebase:", e);
         }
@@ -847,13 +843,13 @@
 
         // --- DATABASE REFS & ROOM LOGIC ---
         function getRoomRef(roomId) {
-            return doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+            return doc(db, 'rooms', roomId);
         }
 
         // NUOVO: Funzione per aggiornare le statistiche globali (Classifica)
         async function updateUserGlobalStats(winsToAdd = 0, stampsToAdd = 0) {
             if (!state.userId) return;
-            const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'userStats', state.userId);
+            const userRef = doc(db, 'userStats', state.userId);
             try {
                 const snap = await getDoc(userRef);
                 if (!snap.exists()) {
@@ -877,20 +873,16 @@
             }
         }
 
-        async function authenticateUser() {
+        async function initAuth() {
             if (!auth) return false;
             try {
-                // Supporto per token personalizzati in ambiente Canvas
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                // Utilizza l'autenticazione anonima standard di Firebase
+                await signInAnonymously(auth);
                 state.userId = auth.currentUser.uid;
                 return true;
             } catch (error) {
                 console.error("Auth error:", error);
-                showAlert("Errore di Accesso", "Impossibile autenticarsi su Firebase in questo ambiente!");
+                showAlert("Errore di Accesso", "Verifica di aver abilitato l'Accesso Anonimo in Authentication su Firebase.");
                 return false;
             }
         }
@@ -1478,13 +1470,13 @@
             els.leaderboardLoading.classList.remove('hidden');
             els.leaderboardContainer.classList.add('hidden');
             
-            // Autenticazione anonima necessaria per leggere se non siamo già loggati
             if (!state.userId) {
-                await authenticateUser();
+                els.leaderboardLoading.textContent = "Errore di accesso al server.";
+                return;
             }
 
             try {
-                const statsRef = collection(db, 'artifacts', appId, 'public', 'data', 'userStats');
+                const statsRef = collection(db, 'userStats');
                 const querySnapshot = await getDocs(statsRef);
                 
                 let allUsers = [];
