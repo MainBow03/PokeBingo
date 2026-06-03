@@ -488,19 +488,24 @@
         import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, increment, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
 
-        // La tua configurazione di Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyAA2xFmBHzybQH1EbS0coekBZBUy2VJ0lU",
-            authDomain: "pokebingo-538bd.firebaseapp.com",
-            projectId: "pokebingo-538bd",
-            storageBucket: "pokebingo-538bd.firebasestorage.app",
-            messagingSenderId: "271557483927",
-            appId: "1:271557483927:web:d752c7d1aab6093150b8d2",
-            measurementId: "G-PC7QE0ZS5Q"
-        };
-        
+        // Firebase Setup per Canvas Environment
         let app, db, auth, analytics;
+        let appId = 'default-app-id';
+
         try {
+            // Usa la configurazione di ambiente se disponibile, altrimenti usa quella di fallback
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+                apiKey: "AIzaSyAA2xFmBHzybQH1EbS0coekBZBUy2VJ0lU",
+                authDomain: "pokebingo-538bd.firebaseapp.com",
+                projectId: "pokebingo-538bd",
+                storageBucket: "pokebingo-538bd.firebasestorage.app",
+                messagingSenderId: "271557483927",
+                appId: "1:271557483927:web:d752c7d1aab6093150b8d2",
+                measurementId: "G-PC7QE0ZS5Q"
+            };
+            
+            appId = typeof __app_id !== 'undefined' ? __app_id : 'pokebingo-538bd';
+
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
@@ -508,8 +513,6 @@
         } catch(e) {
             console.error("Errore inizializzazione Firebase:", e);
         }
-
-        const appId = 'pokebingo-538bd'; // ID fisso per i path di questo progetto
 
         const POKEMON_MAX = 151; // Generazione 1
         let pokemonCache = {};   // { 1: { name: 'bulbasaur', sprite: '...' } }
@@ -877,13 +880,17 @@
         async function authenticateUser() {
             if (!auth) return false;
             try {
-                // Usiamo ESCLUSIVAMENTE l'accesso anonimo per il tuo database Firebase
-                await signInAnonymously(auth);
+                // Supporto per token personalizzati in ambiente Canvas
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
                 state.userId = auth.currentUser.uid;
                 return true;
             } catch (error) {
                 console.error("Auth error:", error);
-                showAlert("Errore di Accesso", "Devi abilitare l'Autenticazione Anonima su Firebase!");
+                showAlert("Errore di Accesso", "Impossibile autenticarsi su Firebase in questo ambiente!");
                 return false;
             }
         }
