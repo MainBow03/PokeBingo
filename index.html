@@ -493,12 +493,13 @@
 
         // 👇👇👇 INCOLLA QUI LA TUA CONFIGURAZIONE FIREBASE 👇👇👇
         const firebaseConfig = {
-            apiKey: "INCOLLA_LA_TUA_API_KEY",
-            authDomain: "IL_TUO_PROGETTO.firebaseapp.com",
-            projectId: "IL_TUO_PROGETTO",
-            storageBucket: "IL_TUO_PROGETTO.firebasestorage.app",
-            messagingSenderId: "INCOLLA_IL_MESSAGING_ID",
-            appId: "INCOLLA_IL_TUO_APP_ID"
+            apiKey: "AIzaSyAA2xFmBHzybQH1EbS0coekBZBUy2VJ0lU",
+            authDomain: "pokebingo-538bd.firebaseapp.com",
+            projectId: "pokebingo-538bd",
+            storageBucket: "pokebingo-538bd.firebasestorage.app",
+            messagingSenderId: "271557483927",
+            appId: "1:271557483927:web:d752c7d1aab6093150b8d2",
+            measurementId: "G-PC7QE0ZS5Q"
         };
         // 👆👆👆 ------------------------------------------ 👆👆👆
 
@@ -506,6 +507,7 @@
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
+            analytics = getAnalytics(app); // Inizializzato anche analytics
         } catch(e) {
             console.error("Errore inizializzazione Firebase:", e);
         }
