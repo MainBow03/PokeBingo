@@ -2,1603 +2,1037 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PokéBingo Online</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Il Mio Game Hub</title>
+    <!-- Importo Tailwind CSS per lo stile -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <!-- Importo le icone -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     
+    <!-- Configurazione personalizzata dei colori -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#0f172a',
+                        card: '#1e293b',
+                        primary: '#8b5cf6', // Viola stile gaming
+                        secondary: '#3b82f6'
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        :root {
-            --poke-red: #ef4444;
-            --poke-blue: #3b82f6;
-            --poke-yellow: #eab308;
-        }
-        body {
-            font-family: 'Nunito', sans-serif;
-            background-color: #f8fafc;
-            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
-            background-size: 20px 20px;
-            overscroll-behavior-y: contain; /* Prevents pull-to-refresh on mobile */
-        }
-        .font-retro { font-family: 'Press Start 2P', cursive; }
+        /* Effetto scorrimento morbido */
+        html { scroll-behavior: smooth; }
         
-        /* UI Animations */
-        @keyframes wobble {
-            0%, 100% { transform: rotate(0deg); }
-            25% { transform: rotate(-5deg); }
-            75% { transform: rotate(5deg); }
-        }
-        .wobble { animation: wobble 0.5s ease-in-out infinite; }
-        
-        @keyframes stamp {
-            0% { transform: scale(3); opacity: 0; }
-            50% { transform: scale(0.8); opacity: 1; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        .anim-stamp { animation: stamp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        
-        @keyframes pop {
-            0% { transform: scale(0.8); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        .anim-pop { animation: pop 0.4s ease-out forwards; }
+        /* Stile personalizzato per la scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
-        @keyframes pulse-catch {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); transform: scale(1); }
-            50% { box-shadow: 0 0 15px 5px rgba(34, 197, 94, 0.8); transform: scale(1.05); border-color: #22c55e; }
+        /* Animazione per le card */
+        .game-card {
+            transition: all 0.3s ease;
         }
-        .can-catch {
-            animation: pulse-catch 1.5s infinite;
-            border-color: #22c55e !important;
-            background-color: #f0fdf4 !important;
-            z-index: 10;
+        .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.3);
+            border-color: #8b5cf6;
         }
+        
+        /* Animazione per il vincitore */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        .bounce-anim { animation: bounce 2s infinite; }
 
-        /* Grid specific styles */
-        .bingo-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 6px;
-            width: 100%;
-            max-width: 500px;
-            margin: 0 auto;
-        }
-        .bingo-cell {
-            aspect-ratio: 1 / 1;
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(2px);
-            border-radius: 12px;
-            border: 3px solid #e2e8f0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
+        /* Stile per lo slider del volume */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #8b5cf6;
             cursor: pointer;
-            overflow: hidden;
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin-top: -6px; /* Centra il pallino rispetto alla barra */
         }
-        .bingo-cell:hover { 
-            transform: translateY(-2px); 
-            border-color: var(--user-color, var(--poke-blue)); 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .bingo-cell.marked {
-            border-color: var(--user-color, var(--poke-red));
-            background-color: color-mix(in srgb, var(--user-color, #ef4444) 15%, white);
-        }
-        .bingo-cell.free-space {
-            background: linear-gradient(135deg, color-mix(in srgb, var(--user-color, #ef4444) 40%, white), var(--user-color, #ef4444));
-            border-color: var(--user-color, #b91c1c);
-            color: white;
-        }
-        
-        /* Custom Scrollbar for drawn history */
-        .history-scroll::-webkit-scrollbar { height: 8px; }
-        .history-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-        .history-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        
-        /* Color Picker & Pokedex */
-        .color-swatch { transition: transform 0.2s, box-shadow 0.2s; }
-        .color-swatch:hover { transform: scale(1.15); }
-        .color-swatch.selected { transform: scale(1.2); box-shadow: 0 0 0 3px white, 0 0 0 6px currentColor; z-index: 10; }
-        
-        .pokedex-entry { filter: grayscale(100%) opacity(0.6); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .pokedex-entry.caught { filter: grayscale(0%) opacity(1); transform: scale(1.05); }
-
-        /* Modals */
-        .modal-overlay {
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(4px);
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #475569;
+            border-radius: 4px;
         }
     </style>
 </head>
-<body class="text-slate-800 min-h-screen flex flex-col items-center">
+<body class="bg-dark text-slate-200 min-h-screen font-sans selection:bg-primary selection:text-white">
 
-    <header class="w-full bg-red-500 text-white shadow-md p-4 sticky top-0 z-40 border-b-4 border-red-700">
-        <div class="max-w-4xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <div class="w-8 h-8 bg-white rounded-full border-4 border-slate-800 flex items-center justify-center relative shadow-inner">
-                    <div class="w-3 h-3 bg-slate-800 rounded-full"></div>
-                    <div class="absolute w-full h-[2px] bg-slate-800 top-1/2 -translate-y-1/2 z-0"></div>
+    <!-- Header / Navbar -->
+    <header class="sticky top-0 z-50 bg-dark/80 backdrop-blur-md border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-tr from-primary to-secondary p-2 rounded-lg text-white">
+                    <i data-lucide="gamepad-2"></i>
                 </div>
-                <h1 class="text-xl md:text-2xl font-black italic tracking-wide drop-shadow-md">PokéBingo!</h1>
+                <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                    My Game Arcade
+                </h1>
             </div>
-            <div id="playerBadge" class="hidden flex items-center gap-2 bg-red-600 px-3 py-1.5 rounded-full border border-red-400">
-                <span class="text-xs font-bold uppercase tracking-wider text-red-100">Trainer:</span>
-                <span id="playerNameDisplay" class="font-bold">Ash</span>
+            
+            <!-- Contatore Online -->
+            <div class="flex items-center gap-2 bg-slate-800/60 px-4 py-2 rounded-full border border-slate-700 shadow-inner">
+                <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
+                <span class="text-sm font-medium text-slate-300"><span id="onlineCount">1</span> Online</span>
+            </div>
+            
+            <!-- Barra di ricerca -->
+            <div class="relative w-full sm:w-72">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <i data-lucide="search" class="w-4 h-4"></i>
+                </div>
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    placeholder="Cerca un gioco..." 
+                    class="block w-full pl-10 pr-3 py-2 border border-slate-700 rounded-xl leading-5 bg-slate-800 text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm transition-colors"
+                >
             </div>
         </div>
     </header>
 
-    <main class="w-full max-w-4xl px-4 py-6 flex-1 flex flex-col relative">
-
-        <!-- SCREEN 1: LOGIN & CUSTOMIZATION -->
-        <div id="screen-login" class="flex-1 flex flex-col items-center justify-center anim-pop max-w-lg mx-auto w-full">
-            <div class="bg-white p-6 md:p-8 rounded-3xl shadow-xl border-4 border-slate-100 w-full text-center relative overflow-hidden">
-                <!-- Decorative BG -->
-                <div class="absolute -right-10 -top-10 w-32 h-32 bg-blue-500 rounded-full opacity-10"></div>
-                <div class="absolute -left-10 -bottom-10 w-32 h-32 bg-yellow-400 rounded-full opacity-10"></div>
-                
-                <h2 class="text-2xl font-black text-slate-800 mb-4 relative z-10">Crea il tuo Allenatore!</h2>
-                
-                <div class="space-y-4 relative z-10 text-left">
-                    <div>
-                        <label class="block text-sm font-bold text-slate-500 mb-1">Il tuo nome da Allenatore</label>
-                        <input type="text" id="inputName" placeholder="Es. Ash, Misty, Red..." class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 font-bold text-slate-700 transition" maxlength="15" value="Ash">
-                    </div>
-                    
-                    <!-- Trainer Character Selection -->
-                    <div>
-                        <label class="block text-sm font-bold text-slate-500 mb-2">Scegli il tuo Personaggio</label>
-                        <div id="trainerSelectGrid" class="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto p-2.5 bg-slate-50 rounded-2xl border-2 border-slate-100">
-                            <!-- Populated dynamically -->
-                        </div>
-                    </div>
-                    
-                    <div class="border-t border-dashed border-slate-200 pt-4 mt-4">
-                        <button id="btnCreateRoom" class="w-full py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-black rounded-xl shadow-lg shadow-blue-500/30 transform transition hover:-translate-y-1 active:scale-95 text-lg uppercase tracking-wide">
-                            Crea Nuova Stanza
-                        </button>
-                    </div>
-
-                    <div class="relative flex items-center py-2">
-                        <div class="flex-grow border-t border-slate-200"></div>
-                        <span class="flex-shrink-0 mx-4 text-slate-400 text-xs font-bold uppercase">Oppure</span>
-                        <div class="flex-grow border-t border-slate-200"></div>
-                    </div>
-
-                    <div class="flex gap-2">
-                        <input type="text" id="inputRoomCode" placeholder="Codice" class="w-2/3 px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-yellow-500 font-bold text-slate-700 uppercase transition text-center" maxlength="5">
-                        <button id="btnJoinRoom" class="w-1/3 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-black rounded-xl shadow-md transform transition hover:-translate-y-1 active:scale-95 uppercase">
-                            Entra
-                        </button>
-                    </div>
-
-                    <!-- NUOVO: Pulsante Classifica -->
-                    <div class="border-t border-slate-200 pt-4 mt-4">
-                        <button id="btnOpenLeaderboard" class="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow-md transform transition hover:-translate-y-1 flex items-center justify-center gap-2">
-                            <span>🏆</span> Classifica Globale
-                        </button>
-                    </div>
-                </div>
-            </div>
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        
+        <div class="mb-10 text-center sm:text-left">
+            <h2 class="text-3xl font-extrabold text-white sm:text-4xl">
+                La mia Collezione
+            </h2>
+            <p class="mt-3 max-w-2xl text-xl text-slate-400 sm:mt-4">
+                Tutti i giochi multiplayer e single-player creati da me. Seleziona un gioco per iniziare a giocare!
+            </p>
         </div>
 
-        <!-- SCREEN 2: LOBBY (SALA D'ATTESA E PERSONALIZZAZIONE) -->
-        <div id="screen-lobby" class="hidden flex-1 flex-col items-center justify-center anim-pop w-full max-w-3xl mx-auto">
-            <div class="bg-white p-6 md:p-8 rounded-3xl shadow-xl border-4 border-slate-100 w-full relative overflow-hidden">
-                <!-- Decorative BG -->
-                <div class="absolute -right-16 -top-16 w-48 h-48 bg-slate-100 rounded-full opacity-50"></div>
-                
-                <!-- Lobby Header -->
-                <div class="text-center mb-6 relative z-10">
-                    <h2 class="text-2xl md:text-3xl font-black text-slate-800 mb-2">Sala d'Attesa</h2>
-                    <div class="flex flex-wrap items-center justify-center gap-3">
-                        <span class="text-slate-500 font-bold uppercase tracking-wider text-sm">Codice Stanza:</span>
-                        <div class="bg-yellow-100 border-2 border-yellow-400 text-yellow-800 font-black text-2xl px-6 py-1.5 rounded-xl tracking-widest shadow-sm" id="lobbyRoomCode">---</div>
-                        <button id="btnCopyCode" class="p-2.5 bg-slate-100 hover:bg-slate-200 border-2 border-slate-200 rounded-xl text-slate-600 transition shadow-sm hover:-translate-y-0.5 active:scale-95" title="Copia Codice">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Customization (Card Color & Ball) -->
-                <div class="bg-slate-50 p-5 rounded-2xl border-2 border-slate-100 mb-6 relative z-10">
-                    <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
-                        </svg>
-                        Personalizza Scheda
-                    </h3>
-                    
-                    <div class="flex flex-col md:flex-row gap-8 items-start">
-                        <!-- Left: Tweak settings -->
-                        <div class="flex-1 space-y-5 w-full">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-500 mb-2">Colore Tema della Scheda</label>
-                                <div id="colorPickerContainer" class="flex flex-wrap gap-2.5 justify-start"></div>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-500 mb-2">Seleziona Timbro Poké Ball</label>
-                                <div id="ballPickerContainer" class="flex flex-wrap gap-2 justify-start max-h-40 overflow-y-auto p-2.5 bg-white rounded-xl border border-slate-200 shadow-inner"></div>
-                            </div>
-                        </div>
-
-                        <!-- Right: Card Preview -->
-                        <div class="w-full md:w-56 flex flex-col items-center shrink-0 bg-white p-3 rounded-2xl border-2 border-slate-200 shadow-sm">
-                            <div class="flex justify-between w-full items-center mb-3 px-1">
-                                <button id="btnPrevCard" class="w-8 h-8 bg-slate-100 border border-slate-300 rounded-full flex items-center justify-center font-bold text-slate-600 hover:bg-slate-200 hover:scale-110 active:scale-95 transition">&lt;</button>
-                                <span id="cardIndicator" class="text-xs font-black text-slate-500 uppercase tracking-wider">Scheda 1 / 10</span>
-                                <button id="btnNextCard" class="w-8 h-8 bg-slate-100 border border-slate-300 rounded-full flex items-center justify-center font-bold text-slate-600 hover:bg-slate-200 hover:scale-110 active:scale-95 transition">&gt;</button>
-                            </div>
-                            <!-- La preview usa gli stessi stili della griglia di gioco ma rimpicciolita -->
-                            <div id="cardPreviewGrid" class="grid grid-cols-5 gap-1 p-1.5 bg-slate-50 border-4 rounded-xl w-full aspect-square transition-colors duration-300">
-                                <!-- Preview generated by JS -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Players List -->
-                <div class="mb-6 relative z-10">
-                    <div class="flex justify-between items-center mb-3 px-1 border-b-2 border-slate-100 pb-2">
-                        <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest">Allenatori Pronti</h3>
-                        <span class="bg-blue-100 text-blue-700 text-xs font-black px-3 py-1 rounded-full border border-blue-200 shadow-sm"><span id="playerCount">1</span> / 10</span>
-                    </div>
-                    <ul id="playersList" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-56 overflow-y-auto p-2">
-                        <!-- Populated by JS -->
-                    </ul>
-                </div>
-
-                <!-- Host Controls & Waiting Message -->
-                <div id="hostControls" class="hidden text-center relative z-10 pt-2">
-                    <button id="btnStartGame" class="w-full py-4 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-black rounded-xl shadow-lg shadow-green-500/30 transform transition hover:-translate-y-1 active:scale-95 text-xl uppercase tracking-wide border-b-4 border-green-700">
-                        Inizia Partita!
-                    </button>
-                </div>
-                <div id="waitingMsg" class="text-center p-5 bg-blue-50 border-2 border-blue-200 rounded-xl relative z-10 mt-2">
-                    <p class="text-blue-800 font-bold flex items-center justify-center gap-2 text-lg">
-                        <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        In attesa dell'Host...
-                    </p>
-                </div>
-            </div>
+        <!-- Griglia dei Giochi (Popolata via JavaScript) -->
+        <div id="gamesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Le card verranno inserite qui -->
         </div>
 
-        <!-- SCREEN 3: ACTIVE GAMEPLAY -->
-        <div id="screen-game" class="hidden flex-1 flex-col anim-pop w-full">
-            
-            <!-- Top Section: Current Draw & Controls -->
-            <div class="flex flex-col md:flex-row gap-6 mb-6">
-                <!-- Current Draw Box -->
-                <div class="w-full md:w-1/3 bg-white p-4 rounded-3xl shadow-lg border-4 border-slate-100 flex flex-col items-center justify-center relative min-h-[200px]">
-                    <div class="absolute inset-0 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl opacity-50 z-0"></div>
-                    
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 relative z-10">Ultimo Estratto</h3>
-                    
-                    <div id="currentDrawContainer" class="relative z-10 flex flex-col items-center w-full">
-                        <div class="text-slate-400 font-bold mb-4">In attesa dell'estrazione...</div>
-                    </div>
-
-                    <!-- Host Draw Button -->
-                    <div id="gameHostControls" class="hidden mt-4 w-full relative z-10">
-                        <button id="btnDrawNext" class="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-black rounded-xl shadow-md transform transition active:scale-95 uppercase text-sm">
-                            Estrai Numero!
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Drawn History (Horizontal Scroll) -->
-                <div class="w-full md:w-2/3 bg-white p-4 rounded-3xl shadow-lg border-4 border-slate-100 flex flex-col">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 shrink-0">Pokémon Estratti</h3>
-                    <div class="history-scroll flex-1 flex gap-2 overflow-x-auto items-center p-2" id="drawnHistoryList">
-                        <div class="text-slate-300 text-sm italic">Nessuno...</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Main Layout Grid: Bingo Board (Left) & Trainer Panel (Right) -->
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-                
-                <!-- Left: Bingo Board Container -->
-                <div class="lg:col-span-3">
-                    <div id="bingoBoardContainer" class="p-4 rounded-3xl shadow-xl border-4 relative transition-all duration-500 bg-white">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="font-black text-xl text-slate-800 drop-shadow-sm bg-white/80 px-3 py-1 rounded-full border">La Tua Scheda</h2>
-                            <div class="text-sm font-bold text-slate-500 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full border border-slate-200 shadow-sm">
-                                Timbrati: <span id="caughtCount" class="text-blue-600 font-extrabold">0</span>/24
-                            </div>
-                        </div>
-                        
-                        <div id="bingoGrid" class="bingo-grid transition-colors duration-500">
-                            <!-- 25 Cells injected here -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right: Trainer Card Panel -->
-                <div id="trainerCardPanel" class="bg-white p-6 rounded-3xl shadow-xl border-4 border-slate-100 flex flex-col items-center text-center relative overflow-hidden transition-all duration-500">
-                    <!-- Background decorative details -->
-                    <div class="absolute -right-12 -bottom-12 w-32 h-32 bg-slate-50 rounded-full opacity-50"></div>
-                    <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 z-10">Scheda Allenatore</h3>
-                    
-                    <div id="trainerSpriteContainer" class="w-32 h-32 bg-slate-50 rounded-full border-4 border-slate-200 flex items-center justify-center relative z-10 shadow-inner mb-4 overflow-hidden">
-                        <img id="gameTrainerSprite" src="" class="w-24 h-24 object-contain" alt="Trainer" onerror="this.src='https://placehold.co/150x150/ef4444/ffffff?text=Trainer'">
-                    </div>
-                    
-                    <h2 id="gameTrainerName" class="text-xl font-extrabold text-slate-800 leading-tight z-10">Ash Ketchum</h2>
-                    <span id="gameTrainerTitle" class="text-[10px] font-bold text-white bg-slate-400 px-3 py-0.5 rounded-full uppercase tracking-wider mt-1.5 z-10">Novellino</span>
-                    
-                    <div class="w-full border-t border-dashed border-slate-200 my-4 z-10"></div>
-                    
-                    <!-- Interactive Dialogue Area -->
-                    <div class="bg-slate-50 p-3 rounded-2xl w-full text-left text-xs font-medium text-slate-600 border border-slate-100 relative z-10">
-                        <p id="trainerDialogue" class="italic">"Pronto a riempire la scheda di PokéBingo! Scegliamo con cura le mosse."</p>
-                    </div>
-                    
-                    <div class="w-full mt-4 grid grid-cols-2 gap-2 text-xs font-bold text-slate-500 z-10">
-                        <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
-                            <div class="text-slate-400 text-[9px] uppercase tracking-wider">Catturati</div>
-                            <div class="text-slate-700 text-sm font-black"><span id="trainerCardCaughtCount">0/24</span></div>
-                        </div>
-                        <div class="bg-slate-50 p-2 rounded-xl border border-slate-100 flex flex-col justify-center">
-                            <div class="text-slate-400 text-[9px] uppercase tracking-wider">Colore</div>
-                            <div class="flex items-center justify-center gap-1 mt-0.5">
-                                <span id="trainerColorDot" class="w-3.5 h-3.5 rounded-full border border-white shadow-sm inline-block"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- NEW: Opponents Section (Spanning full width below main board) -->
-                <div id="opponentsContainer" class="col-span-1 lg:col-span-4 mt-2 bg-slate-50 p-5 rounded-3xl border-4 border-slate-200 shadow-inner">
-                    <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
-                        </svg>
-                        Schede Avversari
-                    </h3>
-                    <div id="opponentsGrid" class="flex flex-wrap gap-4 justify-center lg:justify-start">
-                        <div class="text-slate-400 text-sm italic py-2">In attesa degli avversari...</div>
-                    </div>
-                </div>
-
-            </div>
-            
-            <!-- Pokedex Button (Hidden by default, shown strictly in-game) -->
-            <button id="btnOpenPokedex" class="fixed bottom-6 right-6 md:bottom-10 md:right-10 bg-gradient-to-br from-red-500 to-red-700 w-16 h-16 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.4)] border-[3px] border-white flex items-center justify-center z-40 hover:scale-110 hover:-translate-y-2 transition-all group active:scale-95 hidden">
-                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/pokedex.png" class="w-10 h-10 group-hover:rotate-12 transition-transform drop-shadow-md" alt="Pokedex">
-                <span class="absolute -top-2 -left-2 bg-blue-500 text-white text-xs font-black px-2 py-1 rounded-full shadow-md border-2 border-white hidden" id="pokedexBadge">0</span>
-            </button>
-
+        <!-- Messaggio Nessun Risultato -->
+        <div id="noResults" class="hidden text-center py-20">
+            <i data-lucide="ghost" class="w-16 h-16 mx-auto text-slate-600 mb-4"></i>
+            <h3 class="text-xl font-medium text-slate-300">Nessun gioco trovato</h3>
+            <p class="text-slate-500 mt-2">Prova a cercare con un altro nome.</p>
         </div>
 
     </main>
 
-    <!-- Custom Alert Modal -->
-    <div id="alertModal" class="fixed inset-0 modal-overlay z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity">
-        <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-sm w-full transform scale-95 transition-transform" id="alertModalContent">
-            <h3 id="alertTitle" class="text-lg font-black text-slate-800 mb-2">Avviso</h3>
-            <p id="alertMessage" class="text-slate-600 mb-6 font-medium">Messaggio</p>
-            <button id="alertBtnClose" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition">Chiudi</button>
+    <!-- Widget Radio YouTube -->
+    <div id="radioWidget" class="fixed bottom-4 right-4 bg-slate-800/95 backdrop-blur-md p-4 rounded-xl shadow-2xl border border-slate-700 z-50 w-80 sm:w-96 transition-all duration-300">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="text-white font-bold flex items-center gap-2">
+                <i data-lucide="radio" class="text-primary animate-pulse"></i> Arcade Radio
+            </h3>
+            <span id="songCount" class="text-xs font-semibold bg-slate-700 text-slate-300 px-2 py-1 rounded-full">0/5 brani</span>
         </div>
-    </div>
-
-    <!-- Pokedex Modal -->
-    <div id="pokedexModal" class="fixed inset-0 modal-overlay z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity">
-        <div class="bg-slate-800 p-2 rounded-3xl shadow-2xl max-w-2xl w-full transform scale-95 transition-transform flex flex-col max-h-[90vh]" id="pokedexModalContent">
-            <!-- Pokedex Top Bar -->
-            <div class="flex items-center justify-between p-4 bg-red-600 rounded-t-2xl border-b-4 border-red-800 shadow-sm relative overflow-hidden">
-                <div class="absolute inset-0 bg-white opacity-10 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%,transparent_100%)] bg-[length:20px_20px]"></div>
-                
-                <div class="flex items-center gap-3 relative z-10">
-                    <div class="w-10 h-10 rounded-full bg-sky-400 border-[3px] border-white shadow-[0_0_10px_rgba(56,189,248,0.8)] animate-pulse flex items-center justify-center">
-                        <div class="w-8 h-8 rounded-full bg-sky-300 opacity-50"></div>
-                    </div>
-                    <div class="flex gap-1.5">
-                        <div class="w-3.5 h-3.5 rounded-full bg-red-500 border border-red-900 shadow-inner"></div>
-                        <div class="w-3.5 h-3.5 rounded-full bg-yellow-400 border border-yellow-800 shadow-inner"></div>
-                        <div class="w-3.5 h-3.5 rounded-full bg-green-500 border border-green-900 shadow-inner"></div>
-                    </div>
-                </div>
-                <h3 class="text-xl md:text-2xl font-black text-white tracking-widest uppercase italic drop-shadow-md relative z-10">Pokédex</h3>
-                <button id="btnClosePokedex" class="w-10 h-10 bg-red-800 text-red-100 rounded-full flex items-center justify-center hover:bg-red-900 transition font-black border-2 border-red-700 shadow-inner relative z-10">X</button>
-            </div>
-            
-            <!-- Pokedex Content -->
-            <div class="bg-slate-100 p-4 flex-1 overflow-y-auto m-2 rounded-xl shadow-inner relative">
-                <div class="flex justify-between items-center mb-4 pb-3 border-b-2 border-slate-200">
-                    <span class="font-black text-slate-500 uppercase tracking-wider text-sm">Pokédex Nazionale</span>
-                    <span class="bg-blue-100 text-blue-700 font-black px-4 py-1.5 rounded-full text-sm border-2 border-blue-300 shadow-sm flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
-                        <span id="dexCaughtCount">151</span> / 151
-                    </span>
-                </div>
-                <div id="pokedexGrid" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                    <!-- Entries injected here -->
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Win Modal (BINGO!) -->
-    <div id="winModal" class="fixed inset-0 modal-overlay z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-gradient-to-br from-yellow-300 to-yellow-500 p-8 rounded-3xl shadow-2xl max-w-md w-full text-center border-4 border-white relative overflow-hidden anim-pop">
-            <h2 class="font-retro text-4xl text-white drop-shadow-lg mb-2 wobble">BINGO!</h2>
-            <div class="w-32 h-32 mx-auto bg-white rounded-full flex items-center justify-center mb-4 shadow-inner">
-                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png" class="w-24 h-24" alt="Master Ball">
-            </div>
-            <p class="text-xl font-black text-yellow-900 mb-6"><span id="winnerNameDisplay" class="text-white drop-shadow-md text-2xl">Ash</span> ha vinto la partita!</p>
-            <button id="btnBackToMenu" class="px-8 py-3 bg-white text-yellow-600 font-black rounded-xl shadow-lg hover:bg-slate-50 transition transform hover:-translate-y-1 uppercase tracking-wide">
-                Torna al Menu
+        
+        <div id="radioInputContainer" class="flex flex-col gap-2 hidden">
+            <input type="text" id="ytUrlInput" placeholder="Incolla URL di YouTube..." class="w-full bg-slate-900 text-white text-sm px-3 py-2 rounded-lg border border-slate-600 focus:outline-none focus:border-primary">
+            <button id="addSongBtn" class="w-full bg-primary hover:bg-purple-600 text-white font-medium text-sm py-2 rounded-lg transition-colors flex justify-center items-center gap-2">
+                <i data-lucide="plus" class="w-4 h-4"></i> Aggiungi alla Playlist
             </button>
         </div>
-    </div>
 
-    <!-- NUOVO: Leaderboard Modal -->
-    <div id="leaderboardModal" class="fixed inset-0 modal-overlay z-50 hidden flex items-center justify-center p-4 opacity-0 transition-opacity">
-        <div class="bg-white p-2 rounded-3xl shadow-2xl max-w-4xl w-full transform scale-95 transition-transform flex flex-col max-h-[90vh]" id="leaderboardModalContent">
-            <!-- Top Bar -->
-            <div class="flex items-center justify-between p-4 bg-slate-800 rounded-t-2xl border-b-4 border-slate-900 shadow-sm relative">
-                <h3 class="text-xl md:text-2xl font-black text-white tracking-widest uppercase flex items-center gap-2">
-                    <span>🏆</span> Hall of Fame
-                </h3>
-                <button id="btnCloseLeaderboard" class="w-10 h-10 bg-slate-700 text-white rounded-full flex items-center justify-center hover:bg-red-500 transition font-black border-2 border-slate-600 shadow-inner">X</button>
+        <div id="radioMaxReached" class="hidden text-sm text-emerald-400 font-medium py-2 text-center bg-emerald-400/10 rounded-lg mb-2">
+            ✨ Playlist completata! In loop.
+        </div>
+        
+        <!-- Tasto Rimuovi Canzone (Solo per l'Host) -->
+        <button id="removeSongBtn" class="hidden w-full mt-2 bg-red-900/30 hover:bg-red-800/50 text-red-400 font-medium text-xs py-1.5 rounded-lg transition-colors flex justify-center items-center gap-1 border border-red-800/30">
+            <i data-lucide="x" class="w-3 h-3"></i> Rimuovi ultima canzone
+        </button>
+
+        <!-- Bottoni e Volume -->
+        <div id="radioControls" class="hidden mt-3 flex-col gap-3">
+            <div class="flex items-center gap-2">
+                <button id="playRadioBtn" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium text-sm py-2 rounded-lg transition-colors flex justify-center items-center gap-2">
+                    <i data-lucide="play" id="playIcon" class="w-4 h-4"></i> <span id="playText">Avvia</span>
+                </button>
+                <button id="skipRadioBtn" class="bg-slate-700 hover:bg-slate-600 text-white font-medium text-sm py-2 px-3 rounded-lg transition-colors flex items-center gap-1" title="Vota per saltare canzone">
+                    <i data-lucide="skip-forward" class="w-4 h-4"></i> <span id="skipText">0/1</span>
+                </button>
             </div>
             
-            <!-- Content -->
-            <div class="bg-slate-100 p-4 flex-1 overflow-y-auto m-2 rounded-xl shadow-inner relative">
-                <div id="leaderboardLoading" class="text-center py-10 font-bold text-slate-500 animate-pulse">
-                    Caricamento dati dal server...
-                </div>
-                <div id="leaderboardContainer" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
-                    
-                    <!-- Colonna Vittorie -->
-                    <div class="bg-white p-4 rounded-2xl border-2 border-yellow-400 shadow-md">
-                        <h4 class="text-lg font-black text-yellow-600 uppercase tracking-wider mb-4 border-b-2 border-yellow-100 pb-2 flex items-center gap-2">
-                            <span>👑</span> Maggiori Vittorie
-                        </h4>
-                        <div id="winsList" class="flex flex-col gap-2">
-                            <!-- Injected dynamically -->
-                        </div>
-                    </div>
-
-                    <!-- Colonna Timbri -->
-                    <div class="bg-white p-4 rounded-2xl border-2 border-blue-400 shadow-md">
-                        <h4 class="text-lg font-black text-blue-600 uppercase tracking-wider mb-4 border-b-2 border-blue-100 pb-2 flex items-center gap-2">
-                            <span>🎯</span> Cacciatori (Timbri)
-                        </h4>
-                        <div id="stampsList" class="flex flex-col gap-2">
-                            <!-- Injected dynamically -->
-                        </div>
-                    </div>
-
-                </div>
+            <div class="flex items-center gap-2 px-1">
+                <button id="muteBtn" class="text-slate-400 hover:text-white transition-colors focus:outline-none shrink-0" title="Muto/Smuta">
+                    <i data-lucide="volume-2" id="volumeIcon" class="w-5 h-5"></i>
+                </button>
+                <button id="volDownBtn" class="text-slate-400 hover:text-white transition-colors shrink-0 p-1" title="Abbassa Volume">
+                    <i data-lucide="minus" class="w-4 h-4"></i>
+                </button>
+                <input type="range" id="volumeSlider" min="0" max="100" value="50" class="w-full appearance-none bg-transparent focus:outline-none">
+                <button id="volUpBtn" class="text-slate-400 hover:text-white transition-colors shrink-0 p-1" title="Alza Volume">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                </button>
             </div>
+        </div>
+
+        <!-- Player invisibile YouTube -->
+        <div class="absolute w-0 h-0 overflow-hidden opacity-0 pointer-events-none">
+            <div id="ytplayer"></div>
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, increment, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+    <!-- Tasto Avvia Votazione (NASCOSTO DI DEFAULT) -->
+    <button id="startVoteBtn" class="fixed bottom-4 left-4 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white p-4 rounded-xl shadow-2xl border border-orange-400/50 z-50 hidden items-center gap-3 transition-transform hover:scale-105">
+        <i data-lucide="vote" class="w-6 h-6"></i>
+        <span class="font-bold hidden sm:inline">Cosa giochiamo?</span>
+    </button>
 
-        // Firebase Setup per Canvas Environment
-        let app, db, auth, analytics;
-        let appId = 'default-app-id';
+    <!-- Modal Votazione -->
+    <div id="votingModal" class="fixed inset-0 bg-dark/95 backdrop-blur-sm z-[100] hidden flex-col items-center justify-center p-4">
+        <button id="closeVoteBtn" class="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors focus:outline-none">
+            <i data-lucide="x" class="w-8 h-8"></i>
+        </button>
+        <h2 class="text-3xl font-bold text-white mb-2 text-center">Votazione in corso!</h2>
+        <p class="text-orange-400 text-4xl font-mono font-bold mb-8 drop-shadow-md" id="voteTimer">00:15</p>
+        <div id="voteGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full max-w-4xl max-h-[60vh] overflow-y-auto p-2">
+            <!-- Verrà popolato da JS -->
+        </div>
+        <p class="text-slate-400 mt-6 text-sm text-center">Il gioco più votato si aprirà in automatico per tutti.</p>
+    </div>
 
-        try {
-            // Usa la configurazione di ambiente se disponibile, altrimenti usa quella di fallback
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-                apiKey: "AIzaSyAA2xFmBHzybQH1EbS0coekBZBUy2VJ0lU",
-                authDomain: "pokebingo-538bd.firebaseapp.com",
-                projectId: "pokebingo-538bd",
-                storageBucket: "pokebingo-538bd.firebasestorage.app",
-                messagingSenderId: "271557483927",
-                appId: "1:271557483927:web:d752c7d1aab6093150b8d2",
-                measurementId: "G-PC7QE0ZS5Q"
-            };
-            
-            appId = typeof __app_id !== 'undefined' ? __app_id : 'pokebingo-538bd';
+    <!-- Modal Vincitore -->
+    <div id="winnerModal" class="fixed inset-0 bg-primary/95 backdrop-blur-md z-[110] hidden flex-col items-center justify-center p-4 text-center">
+        <span id="winnerEmoji" class="text-7xl mb-6 bounce-anim">🏆</span>
+        <h2 class="text-3xl font-extrabold text-white mb-2">Il gioco vincitore è:</h2>
+        <h3 id="winnerName" class="text-5xl sm:text-6xl font-black text-yellow-300 mb-8 drop-shadow-lg">NOME GIOCO</h3>
+        <p id="winnerStatusText" class="text-white text-xl animate-pulse mb-8">Apertura automatica in corso...</p>
+        <a id="manualJoinBtn" href="#" target="_blank" class="px-8 py-4 bg-white text-primary font-bold rounded-full text-xl hover:bg-slate-100 transition-transform hover:scale-105 shadow-xl hidden">
+            Clicca qui per Entrare!
+        </a>
+    </div>
 
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            analytics = getAnalytics(app);
-        } catch(e) {
-            console.error("Errore inizializzazione Firebase:", e);
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 mt-auto py-8">
+        <div class="max-w-7xl mx-auto px-4 text-center text-slate-500 text-sm">
+            <p>Creato con ❤️ e Firebase. Hostato su GitHub Pages.</p>
+        </div>
+    </footer>
+
+    <!-- Logica dell'applicazione -->
+    <script>
+        // Inizializza le icone
+        lucide.createIcons();
+
+        // ==========================================
+        // SISTEMA HOST (ADMIN SEGRETO)
+        // ==========================================
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('host') === 'simo') {
+            localStorage.setItem('isArcadeHost', 'true');
+            // Pulisce l'URL per nascondere il trucco se condividi lo schermo
+            window.history.replaceState(null, '', window.location.pathname);
+        }
+        // Variabile globale che dice se sei l'admin
+        const isAdmin = localStorage.getItem('isArcadeHost') === 'true';
+
+        // Mostra il tasto votazione SOLO se sei admin
+        const startVoteBtn = document.getElementById('startVoteBtn');
+        if (isAdmin) {
+            startVoteBtn.classList.remove('hidden');
+            startVoteBtn.classList.add('flex');
         }
 
-        const POKEMON_MAX = 151; // Generazione 1
-        let pokemonCache = {};   // { 1: { name: 'bulbasaur', sprite: '...' } }
-        
-        // Colors for Board Personalization (20 variants)
-        const CARD_COLORS = [
-            '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', 
-            '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', 
-            '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', 
-            '#ec4899', '#f43f5e', '#64748b', '#71717a', '#a8a29e'
+        // ==========================================
+        // 1. INSERISCI QUI I TUOI GIOCHI
+        // ==========================================
+        const myGames = [
+            {
+                id: 1,
+                title: "Total Drama",
+                description: "Competi contro diversi giocatori nel reality peggiore di sempre! Squadre, eliminazioni, immunità, idoli e amicizie tutto qui su a tutto REALITY!",
+                url: "https://mainbow03.github.io/totaldramaaaa/", 
+                emoji: "💰",
+                tags: ["Sopravvivenza", "Multiplayer", "Strategia"],
+                color: "from-blue-500 to-cyan-400"
+            },
+            {
+                id: 2,
+                title: "Gioco Dell Oca",
+                description: "Una board game tutta particolare che simula il gioco dell'oca in varie modalità con diversi personaggi ognuno con un proprio dado!",
+                url: "https://mainbow03.github.io/Gioco-Dell-Oca/",
+                emoji: "🕹️",
+                tags: ["Arcade", "Board Game", "Fortuna"],
+                color: "from-red-500 to-orange-400"
+            },
+            {
+                id: 3,
+                title: "Battaglia di Puzzle",
+                description: "Sfida i tuoi amici in diversi puzzle e battili sul tempo completandoli prima di loro. Puoi scegliere sia quale puzzle sia la difficoltà con tanto di sabotaggi!",
+                url: "https://mainbow03.github.io/puzzle/",
+                emoji: "🧩",
+                tags: ["Duello", "Sfida", "Logica", "Puzzle"],
+                color: "from-purple-500 to-pink-400"
+            },
+            {
+                id: 4,
+                title: "Territory War",
+                description: "Diversi giocatori, unica griglia. A turno lanci il dado e occupi più spazio possibile. Sii colui che alla fine della partita ha conquistato il maggior numero di caselle per vincere!",
+                url: "https://mainbow03.github.io/Territorywar/",
+                emoji: "🌍",
+                tags: ["Fortuna", "Logica", "Competitivo"],
+                color: "from-green-500 to-emerald-400"
+            },
+            {
+                id: 5,
+                title: "Party Championship",
+                description: "Sfida i tuoi amici in una serie di minigiochi differenti, alla fine di ogni sfida ogni giocatore ottiene un punteggio in base al risultato. Concludi tutte le sfide con il maggior numero punti per vincere!",
+                url: "https://mainbow03.github.io/party-giocoscemo/",
+                emoji: "🏆",
+                tags: ["Competitivo", "Fortuna", "Varietà", "Carte", "Grand Prix Style", "Giochi Da Tavolo"],
+                color: "from-yellow-500 to-amber-400"
+            },
+            {
+                id: 6,
+                title: "Torneo Favoriti a squadre",
+                description: "Tu e i tuoi amici siete giudici, dovete votare in base alle vostre preferenze su qualsiasi categoria vogliate. Il team o il personaggio/oggetto favorito avrà la vittoria",
+                url: "https://mainbow03.github.io/giudici-votazione-torneopotere/",
+                emoji: "🗳️",
+                tags: ["Votazioni", "Preferenza"],
+                color: "from-indigo-500 to-blue-500"
+            },
+            {
+                id: 7,
+                title: "La Ruota Dei Dingas",
+                description: "Proprio come la ruota di Gerry Scotti, gira la ruota e affronta i tuoi amici in una gara di cultura!",
+                url: "https://mainbow03.github.io/RuotaDeiDingas/",
+                emoji: "🎡",
+                tags: ["Quiz Televisivo"],
+                color: "from-rose-500 to-red-500"
+            },
+            {
+                id: 8,
+                title: "Partyverse",
+                description: "Un gioco basato esclusivamente sulla fortuna : lancia i dadi e togli vite ai nemici, passa le bombe o risolvi domande di matematica",
+                url: "https://link-gioco-8.com", // <-- Aggiungi qui il vero link quando lo hai
+                emoji: "🎉",
+                tags: ["Fortuna"],
+                color: "from-teal-500 to-green-500"
+            },
+            {
+                id: 9,
+                title: "Battle Royale",
+                description: "Forma il tuo team, sfida i tuoi avversari in battaglie RPG o lanci di dadi. Il team superstite vince!",
+                url: "https://mainbow03.github.io/Battle-Royale/",
+                emoji: "⚔️",
+                tags: ["RPG", "Strategia", "Sopravvivenza"],
+                color: "from-red-500 to-rose-400"
+            },
+            {
+                id: 10,
+                title: "Multimon",
+                description: "Combatti in lotte stile RPG con i personaggi delle tue serie preferite! Partecipa a diverse modalità competitive come il Torneo o affronta l'avvincente Modalità Campagna.",
+                url: "https://mainbow03.github.io/Multimon/",
+                emoji: "🐉",
+                tags: ["RPG", "Combattimento", "Torneo", "Anime"],
+                color: "from-fuchsia-500 to-purple-500"
+            },
+            {
+                id: 11,
+                title: "PokèBingo",
+                description: "Praticamente un bingo ma vengono estratti i Pokémon anziché i numeri. Molto competitivo!",
+                url: "https://mainbow03.github.io/PokeBingo/",
+                emoji: "🎱",
+                tags: ["Bingo", "Pokémon", "Competitivo", "Fortuna"],
+                color: "from-red-600 to-red-400"
+            }
         ];
 
-        // List of official trainers for selection
-        const TRAINERS = [
-            { id: 'ash', name: 'Ash Ketchum', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/ash.png' },
-            { id: 'red', name: 'Red', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/red.png' },
-            { id: 'blue', name: 'Blu', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/blue.png' },
-            { id: 'misty', name: 'Misty', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/misty.png' },
-            { id: 'brock', name: 'Brock', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/brock.png' },
-            { id: 'cynthia', name: 'Camilla', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/cynthia.png' },
-            { id: 'steven', name: 'Rocco', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/steven.png' },
-            { id: 'lance', name: 'Lance', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/lance.png' },
-            { id: 'serena', name: 'Serena', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/serena.png' },
-            { id: 'dawn', name: 'Lucinda', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/dawn.png' },
-            { id: 'rosa', name: 'Rina', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/rosa.png' },
-            { id: 'may', name: 'Vera', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/may.png' },
-            { id: 'ethan', name: 'Armonio', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/ethan.png' },
-            { id: 'lyra', name: 'Cetra', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/lyra.png' },
-            { id: 'brendan', name: 'Brendon', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/brendan.png' },
-            { id: 'lucas', name: 'Lucas', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/lucas.png' },
-            { id: 'giovanni', name: 'Giovanni', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/giovanni.png' },
-            { id: 'erika', name: 'Erika', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/erika.png' },
-            { id: 'sabrina', name: 'Sabrina', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/sabrina.png' },
-            { id: 'bugcatcher', name: 'Pigliamosche', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/bugcatcher.png' },
-            { id: 'lass', name: 'Pupa', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/lass.png' },
-            { id: 'hiker', name: 'Montanaro', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/hiker.png' },
-            { id: 'youngster', name: 'Bullo', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/youngster.png' },
-            { id: 'rocket', name: 'Recluta Rocket', sprite: 'https://play.pokemonshowdown.com/sprites/trainers/rocketgrunt.png' }
-        ];
+        // Riferimenti agli elementi del DOM
+        const gridContainer = document.getElementById('gamesGrid');
+        const searchInput = document.getElementById('searchInput');
+        const noResultsMsg = document.getElementById('noResults');
 
-        const POKEBALLS = [
-            { id: 'poke-ball', name: 'Poké Ball', sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png' },
-            { id: 'great-ball', name: 'Mega Ball', sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/great-ball.png' },
-            { id: 'ultra-ball', name: 'Ultra Ball', sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png' },
-            { id: 'master-ball', name: 'Master Ball', sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png' },
-            { id: 'safari-ball', name: 'Safari Ball', sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/safari-ball.png' },
-            { id: 'premier-ball', name: 'Premier Ball', sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/premier-ball.png' },
-            { id: 'quick-ball', name: 'Velox Ball', sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/quick-ball.png' },
-            { id: 'dusk-ball', name: 'Scuro Ball', sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dusk-ball.png' },
-            { id: 'timer-ball', name: 'Timer Ball', sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/timer-ball.png' },
-            { id: 'luxury-ball', name: 'Chic Ball', sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/luxury-ball.png' },
-            { id: 'dive-ball', name: 'Sub Ball', sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dive-ball.png' },
-            { id: 'net-ball', name: 'Rete Ball', sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/net-ball.png' },
-            { id: 'nest-ball', name: 'Minor Ball', sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/nest-ball.png' },
-            { id: 'heal-ball', name: 'Cura Ball', sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/heal-ball.png' },
-            { id: 'moon-ball', name: 'Luna Ball', sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/moon-ball.png' },
-            { id: 'love-ball', name: 'Love Ball', sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/love-ball.png' },
-            { id: 'beast-ball', name: 'UC Ball', sprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/beast-ball.png' }
-        ];
-
-        let state = {
-            userId: null,
-            userName: 'Ash',
-            selectedTrainer: 'ash', // Default selected trainer character ID
-            roomId: null,
-            isHost: false,
-            localCard: [], // Array of 25 IDs
-            stampedCells: Array(25).fill(false),
-            gameData: null, // Last firestore snapshot data
-            
-            // Pre-game states
-            generatedCards: [],
-            selectedCardIndex: 0,
-            cardColor: '#ef4444', // Default Red
-            selectedBall: 'poke-ball'
-        };
-
-        let unsubscribeRoom = null;
-
-        // UI Elements
-        const screens = {
-            login: document.getElementById('screen-login'),
-            lobby: document.getElementById('screen-lobby'),
-            game: document.getElementById('screen-game')
-        };
-        const els = {
-            inputName: document.getElementById('inputName'),
-            inputRoomCode: document.getElementById('inputRoomCode'),
-            btnCreateRoom: document.getElementById('btnCreateRoom'),
-            btnJoinRoom: document.getElementById('btnJoinRoom'),
-            lobbyRoomCode: document.getElementById('lobbyRoomCode'),
-            btnCopyCode: document.getElementById('btnCopyCode'),
-            playersList: document.getElementById('playersList'),
-            playerCount: document.getElementById('playerCount'),
-            hostControls: document.getElementById('hostControls'),
-            waitingMsg: document.getElementById('waitingMsg'),
-            btnStartGame: document.getElementById('btnStartGame'),
-            bingoGrid: document.getElementById('bingoGrid'),
-            currentDrawContainer: document.getElementById('currentDrawContainer'),
-            gameHostControls: document.getElementById('gameHostControls'),
-            btnDrawNext: document.getElementById('btnDrawNext'),
-            drawnHistoryList: document.getElementById('drawnHistoryList'),
-            caughtCount: document.getElementById('caughtCount'),
-            playerBadge: document.getElementById('playerBadge'),
-            playerNameDisplay: document.getElementById('playerNameDisplay'),
-            
-            // Colors & Pre-Game
-            colorPickerContainer: document.getElementById('colorPickerContainer'),
-            ballPickerContainer: document.getElementById('ballPickerContainer'),
-            btnPrevCard: document.getElementById('btnPrevCard'),
-            btnNextCard: document.getElementById('btnNextCard'),
-            cardIndicator: document.getElementById('cardIndicator'),
-            cardPreviewGrid: document.getElementById('cardPreviewGrid'),
-            btnOpenPokedex: document.getElementById('btnOpenPokedex'),
-            btnClosePokedex: document.getElementById('btnClosePokedex'),
-            pokedexModal: document.getElementById('pokedexModal'),
-            pokedexModalContent: document.getElementById('pokedexModalContent'),
-            pokedexGrid: document.getElementById('pokedexGrid'),
-            dexCaughtCount: document.getElementById('dexCaughtCount'),
-            pokedexBadge: document.getElementById('pokedexBadge'),
-            
-            // Leaderboard
-            btnOpenLeaderboard: document.getElementById('btnOpenLeaderboard'),
-            btnCloseLeaderboard: document.getElementById('btnCloseLeaderboard'),
-            leaderboardModal: document.getElementById('leaderboardModal'),
-            leaderboardModalContent: document.getElementById('leaderboardModalContent'),
-            leaderboardLoading: document.getElementById('leaderboardLoading'),
-            leaderboardContainer: document.getElementById('leaderboardContainer'),
-            winsList: document.getElementById('winsList'),
-            stampsList: document.getElementById('stampsList')
-        };
-
-        // Fetch base Pokemon data efficiently
-        async function loadPokemonData() {
-            try {
-                const res = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=${POKEMON_MAX}`);
-                const data = await res.json();
-                data.results.forEach((p, index) => {
-                    const id = index + 1;
-                    pokemonCache[id] = {
-                        id: id,
-                        name: p.name.charAt(0).toUpperCase() + p.name.slice(1), 
-                        sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`,
-                        artwork: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`
-                    };
-                });
-            } catch (e) {
-                console.warn("Failed to load PokeAPI data, using fallbacks.", e);
-                for(let i=1; i<=POKEMON_MAX; i++) {
-                    pokemonCache[i] = {
-                        id: i,
-                        name: `Pokemon #${i}`,
-                        sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png`,
-                        artwork: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${i}.png`
-                    };
-                }
-            }
+        // Funzione per generare l'HTML dei tag
+        function generateTags(tags) {
+            return tags.map(tag => 
+                `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700">
+                    ${tag}
+                </span>`
+            ).join('');
         }
 
-        // Custom UI Alert
-        function showAlert(title, message) {
-            const modal = document.getElementById('alertModal');
-            const content = document.getElementById('alertModalContent');
-            document.getElementById('alertTitle').textContent = title;
-            document.getElementById('alertMessage').textContent = message;
-            
-            modal.classList.remove('hidden');
-            setTimeout(() => {
-                modal.classList.remove('opacity-0');
-                content.classList.remove('scale-95');
-                content.classList.add('scale-100');
-            }, 10);
-        }
+        // Funzione per renderizzare le card dei giochi
+        function renderGames(gamesToRender) {
+            gridContainer.innerHTML = ''; // Pulisce la griglia
 
-        document.getElementById('alertBtnClose').addEventListener('click', () => {
-            const modal = document.getElementById('alertModal');
-            const content = document.getElementById('alertModalContent');
-            modal.classList.add('opacity-0');
-            content.classList.remove('scale-100');
-            content.classList.add('scale-95');
-            setTimeout(() => modal.classList.add('hidden'), 300);
-        });
-
-        function switchScreen(screenName) {
-            Object.values(screens).forEach(s => s.classList.add('hidden'));
-            screens[screenName].classList.remove('hidden');
-            
-            // Show Pokedex strictly ONLY in the Main Menu (Login)
-            if (screenName === 'login') {
-                els.btnOpenPokedex.classList.remove('hidden');
-            } else {
-                els.btnOpenPokedex.classList.add('hidden');
-            }
-        }
-
-        function generateRoomCode() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let code = '';
-            for(let i=0; i<5; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
-            return code;
-        }
-
-        function generateBingoCard() {
-            let availableIds = Array.from({length: POKEMON_MAX}, (_, i) => i + 1);
-            let card = [];
-            for (let i = 0; i < 24; i++) {
-                const randIndex = Math.floor(Math.random() * availableIds.length);
-                card.push(availableIds[randIndex]);
-                availableIds.splice(randIndex, 1);
-            }
-            card.splice(12, 0, 0); // Poke Ball in the center
-            return card;
-        }
-
-        // Initialize character selector UI in main menu
-        function initTrainerSelectorUI() {
-            const grid = document.getElementById('trainerSelectGrid');
-            grid.innerHTML = '';
-            TRAINERS.forEach(t => {
-                const swatch = document.createElement('div');
-                swatch.className = `flex flex-col items-center justify-center p-2 bg-white border-2 rounded-2xl cursor-pointer transition-all hover:scale-105 active:scale-95 ${t.id === state.selectedTrainer ? 'border-blue-500 bg-blue-50/50' : 'border-slate-200'}`;
-                swatch.innerHTML = `
-                    <img src="${t.sprite}" class="w-12 h-12 object-contain" alt="${t.name}" onerror="this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png'">
-                    <span class="text-[10px] font-bold text-slate-500 mt-1 truncate w-full text-center leading-none">${t.name}</span>
-                `;
-                swatch.addEventListener('click', () => {
-                    state.selectedTrainer = t.id;
-                    document.querySelectorAll('#trainerSelectGrid > div').forEach(el => {
-                        el.classList.remove('border-blue-500', 'bg-blue-50/50');
-                        el.classList.add('border-slate-200');
-                    });
-                    swatch.classList.remove('border-slate-200');
-                    swatch.classList.add('border-blue-500', 'bg-blue-50/50');
-                });
-                grid.appendChild(swatch);
-            });
-        }
-
-        // --- PRE-GAME LOBBY SETUP ---
-        function initSetupUI() {
-            state.generatedCards = Array.from({length: 10}, () => generateBingoCard());
-            state.selectedCardIndex = 0;
-            state.localCard = state.generatedCards[0];
-            
-            // Color Picker Rendering
-            els.colorPickerContainer.innerHTML = '';
-            CARD_COLORS.forEach(colorHex => {
-                const swatch = document.createElement('div');
-                swatch.className = `w-8 h-8 md:w-10 md:h-10 rounded-full cursor-pointer color-swatch ${colorHex === state.cardColor ? 'selected' : ''} shadow-md`;
-                swatch.style.backgroundColor = colorHex;
-                swatch.style.color = colorHex; 
-                
-                swatch.addEventListener('click', () => {
-                    document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
-                    swatch.classList.add('selected');
-                    state.cardColor = colorHex;
-                    els.cardPreviewGrid.style.borderColor = colorHex;
-                    
-                    if (state.roomId && state.userId) {
-                        const roomRef = getRoomRef(state.roomId);
-                        updateDoc(roomRef, {
-                            [`players.${state.userId}.color`]: state.cardColor
-                        }).catch(err => console.error("Error syncing color:", err));
-                    }
-                });
-                
-                els.colorPickerContainer.appendChild(swatch);
-            });
-
-            // Ball Picker Rendering
-            els.ballPickerContainer.innerHTML = '';
-            POKEBALLS.forEach(ball => {
-                const swatch = document.createElement('div');
-                swatch.className = `w-12 h-12 rounded-full cursor-pointer flex items-center justify-center bg-white border-2 ${ball.id === state.selectedBall ? 'border-blue-500 bg-blue-50/50 scale-110 shadow-md' : 'border-slate-200'} shadow-sm transition-all`;
-                swatch.innerHTML = `<img src="${ball.sprite}" class="w-8 h-8 object-contain drop-shadow-sm" alt="${ball.name}" title="${ball.name}">`;
-                
-                swatch.addEventListener('click', () => {
-                    document.querySelectorAll('#ballPickerContainer > div').forEach(el => {
-                        el.classList.remove('border-blue-500', 'bg-blue-50/50', 'scale-110', 'shadow-md');
-                        el.classList.add('border-slate-200');
-                    });
-                    swatch.classList.remove('border-slate-200');
-                    swatch.classList.add('border-blue-500', 'bg-blue-50/50', 'scale-110', 'shadow-md');
-                    state.selectedBall = ball.id;
-                    updateCardPreview();
-                    
-                    if (state.roomId && state.userId) {
-                        const roomRef = getRoomRef(state.roomId);
-                        updateDoc(roomRef, {
-                            [`players.${state.userId}.ball`]: state.selectedBall
-                        }).catch(err => console.error("Error syncing ball:", err));
-                    }
-                });
-                els.ballPickerContainer.appendChild(swatch);
-            });
-
-            els.cardPreviewGrid.style.borderColor = state.cardColor;
-            updateCardPreview();
-        }
-
-        function updateCardPreview() {
-            els.cardIndicator.textContent = `Scheda ${state.selectedCardIndex + 1} / 10`;
-            state.localCard = state.generatedCards[state.selectedCardIndex];
-            
-            const selectedBallObj = POKEBALLS.find(b => b.id === state.selectedBall) || POKEBALLS[0];
-            
-            els.cardPreviewGrid.innerHTML = '';
-            state.localCard.forEach(pokeId => {
-                const cell = document.createElement('div');
-                cell.className = 'aspect-square bg-slate-50 rounded flex items-center justify-center overflow-hidden border border-slate-200';
-                if (pokeId === 0) {
-                    cell.innerHTML = `<img src="${selectedBallObj.sprite}" class="w-5 h-5 drop-shadow-sm">`;
-                    cell.style.backgroundColor = state.cardColor;
-                    cell.style.borderColor = state.cardColor;
-                } else {
-                    const p = pokemonCache[pokeId];
-                    cell.innerHTML = `<img src="${p?.sprite || ''}" class="w-full h-full object-contain scale-[1.3] drop-shadow-sm" onerror="this.src='https://placehold.co/50x50/cccccc/333333?text=?'">`;
-                }
-                els.cardPreviewGrid.appendChild(cell);
-            });
-        }
-
-        els.btnPrevCard.addEventListener('click', () => {
-            state.selectedCardIndex = (state.selectedCardIndex - 1 + 10) % 10;
-            updateCardPreview();
-        });
-
-        els.btnNextCard.addEventListener('click', () => {
-            state.selectedCardIndex = (state.selectedCardIndex + 1) % 10;
-            updateCardPreview();
-        });
-
-        // --- DATABASE REFS & ROOM LOGIC ---
-        function getRoomRef(roomId) {
-            return doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
-        }
-
-        // NUOVO: Funzione per aggiornare le statistiche globali (Classifica)
-        async function updateUserGlobalStats(winsToAdd = 0, stampsToAdd = 0) {
-            if (!state.userId) return;
-            const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'userStats', state.userId);
-            try {
-                const snap = await getDoc(userRef);
-                if (!snap.exists()) {
-                    await setDoc(userRef, {
-                        name: state.userName,
-                        trainer: state.selectedTrainer,
-                        wins: winsToAdd,
-                        stamps: stampsToAdd
-                    });
-                } else {
-                    const updates = {
-                        name: state.userName,
-                        trainer: state.selectedTrainer
-                    };
-                    if (winsToAdd > 0) updates.wins = increment(winsToAdd);
-                    if (stampsToAdd > 0) updates.stamps = increment(stampsToAdd);
-                    await updateDoc(userRef, updates);
-                }
-            } catch (e) {
-                console.error("Global stats update failed:", e);
-            }
-        }
-
-        async function initAuth() {
-            if (!auth) return false;
-            try {
-                // Supporto per token personalizzati in ambiente Canvas obbligatorio PRIMA di qualsiasi query
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-                state.userId = auth.currentUser.uid;
-                return true;
-            } catch (error) {
-                console.error("Auth error:", error);
-                showAlert("Errore di Accesso", "Impossibile autenticarsi su Firebase in questo ambiente!");
-                return false;
-            }
-        }
-
-        async function joinRoomAction(code, isCreating = false) {
-            const name = els.inputName.value.trim() || 'Allenatore';
-            if (name.length < 2) {
-                showAlert("Nome Non Valido", "Inserisci un nome di almeno 2 caratteri.");
+            if (gamesToRender.length === 0) {
+                gridContainer.classList.add('hidden');
+                noResultsMsg.classList.remove('hidden');
                 return;
             }
 
-            if (!state.userId) {
-                showAlert("Errore Autenticazione", "Accesso al server in corso, riprova tra un istante.");
-                return;
-            }
+            gridContainer.classList.remove('hidden');
+            noResultsMsg.classList.add('hidden');
 
-            state.userName = name;
-            state.roomId = code.toUpperCase();
-            
-            els.playerBadge.classList.remove('hidden');
-            els.playerNameDisplay.textContent = name;
-
-            const roomRef = getRoomRef(state.roomId);
-
-            try {
-                const roomSnap = await getDoc(roomRef);
+            gamesToRender.forEach(game => {
+                const card = document.createElement('a');
+                card.href = game.url;
+                card.target = "_blank"; // Apre in una nuova scheda
+                card.className = "game-card bg-card rounded-2xl border border-slate-700 overflow-hidden flex flex-col h-full group relative";
                 
-                if (isCreating) {
-                    if (roomSnap.exists()) {
-                        showAlert("Errore", "La stanza esiste già. Riprova.");
-                        return;
-                    }
-                    state.isHost = true;
-                    await setDoc(roomRef, {
-                        id: state.roomId,
-                        host: state.userId,
-                        status: 'waiting',
-                        currentDraw: null,
-                        drawnList: [],
-                        winner: null,
-                        players: {
-                            [state.userId]: { 
-                                name: state.userName,
-                                trainer: state.selectedTrainer,
-                                color: state.cardColor,
-                                ball: state.selectedBall
-                            }
-                        }
-                    });
-                } else {
-                    if (!roomSnap.exists()) {
-                        showAlert("Errore 404", "Stanza non trovata. Controlla il codice.");
-                        return;
-                    }
-                    const data = roomSnap.data();
-                    if (data.status === 'playing') {
-                        showAlert("Gioco Avviato", "La partita è già in corso!");
-                        return;
-                    }
-                    state.isHost = (data.host === state.userId);
+                card.innerHTML = `
+                    <!-- Top accent line -->
+                    <div class="h-2 w-full bg-gradient-to-r ${game.color}"></div>
                     
-                    await updateDoc(roomRef, {
-                        [`players.${state.userId}`]: { 
-                            name: state.userName,
-                            trainer: state.selectedTrainer,
-                            color: state.cardColor,
-                            ball: state.selectedBall
-                        }
-                    });
-                }
-
-                initSetupUI();
-                setupRoomListener();
-                switchScreen('lobby');
-                
-                // Aggiorna il profilo utente globale all'ingresso nella stanza
-                updateUserGlobalStats(0, 0);
-                
-            } catch (error) {
-                console.error("Firestore Error:", error);
-                showAlert("Errore di Rete", "Problema di comunicazione con il server.");
-            }
-        }
-
-        function setupRoomListener() {
-            if (unsubscribeRoom) unsubscribeRoom();
-            const roomRef = getRoomRef(state.roomId);
-            
-            unsubscribeRoom = onSnapshot(roomRef, (docSnap) => {
-                if (!docSnap.exists()) {
-                    showAlert("Stanza Chiusa", "La stanza è stata chiusa dall'host.");
-                    unsubscribeRoom();
-                    switchScreen('login');
-                    return;
-                }
-
-                const data = docSnap.data();
-                state.gameData = data;
-                
-                updateLobbyUI(data);
-                
-                if (data.status === 'playing' && screens.lobby.classList.contains('hidden') === false) {
-                    startGameLocal();
-                }
-
-                if (data.status === 'playing') {
-                    updateGameUI(data);
-                    renderOpponents(data);
-                }
-
-                if (data.status === 'finished' && data.winner) {
-                    showWinScreen(data.winner, data.players[data.winner]?.name || 'Un Allenatore');
-                }
-                
-            }, (error) => {
-                console.error("Sync error:", error);
-            });
-        }
-
-        function updateLobbyUI(data) {
-            els.lobbyRoomCode.textContent = data.id;
-            
-            if (state.isHost) {
-                els.hostControls.classList.remove('hidden');
-                els.waitingMsg.classList.add('hidden');
-            } else {
-                els.hostControls.classList.add('hidden');
-                els.waitingMsg.classList.remove('hidden');
-            }
-
-            const players = Object.values(data.players || {});
-            els.playerCount.textContent = players.length;
-            els.playersList.innerHTML = '';
-            
-            players.forEach(p => {
-                const trainerObj = TRAINERS.find(t => t.id === p.trainer) || TRAINERS[0];
-                const li = document.createElement('li');
-                li.className = "bg-slate-50 border-2 border-slate-200 rounded-2xl p-2.5 text-center font-bold text-slate-700 text-sm flex items-center gap-2 shadow-sm";
-                li.innerHTML = `
-                    <div class="w-10 h-10 rounded-full bg-white border flex items-center justify-center shrink-0 overflow-hidden shadow-inner">
-                        <img src="${trainerObj.sprite}" class="w-8 h-8 object-contain" onerror="this.src='https://placehold.co/50x50/ef4444/ffffff?text=T'">
-                    </div>
-                    <div class="text-left leading-tight truncate">
-                        <div class="truncate text-slate-800">${p.name}</div>
-                        <div class="text-[10px] text-slate-400 capitalize">${trainerObj.name}</div>
-                    </div>
-                `;
-                els.playersList.appendChild(li);
-            });
-        }
-
-        async function startGlobalGame() {
-            if (!state.isHost) return;
-            const roomRef = getRoomRef(state.roomId);
-            try {
-                await updateDoc(roomRef, {
-                    status: 'playing',
-                    currentDraw: null,
-                    drawnList: []
-                });
-            } catch (error) {
-                console.error("Error starting game", error);
-            }
-        }
-
-        // Convert Hex to RGB for gradients
-        function hexToRgb(hex) {
-            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-            return result ? {
-                r: parseInt(result[1], 16),
-                g: parseInt(result[2], 16),
-                b: parseInt(result[3], 16)
-            } : null;
-        }
-
-        function startGameLocal() {
-            switchScreen('game');
-            state.stampedCells = Array(25).fill(false);
-            state.stampedCells[12] = true; // Spazio Libero
-            
-            // Set colors dynamically & fix Card Color Gradient (Fix Bug #1)
-            const colorRgb = hexToRgb(state.cardColor);
-            const rgbaLight = colorRgb ? `rgba(${colorRgb.r}, ${colorRgb.g}, ${colorRgb.b}, 0.15)` : 'rgba(239, 68, 68, 0.15)';
-            const rgbaDark = colorRgb ? `rgba(${colorRgb.r}, ${colorRgb.g}, ${colorRgb.b}, 0.85)` : 'rgba(239, 68, 68, 0.85)';
-            
-            const boardContainer = document.getElementById('bingoBoardContainer');
-            boardContainer.style.background = `linear-gradient(135deg, ${rgbaLight} 0%, ${rgbaDark} 100%)`;
-            boardContainer.style.borderColor = state.cardColor;
-            
-            els.bingoGrid.style.setProperty('--user-color', state.cardColor);
-            
-            if (state.isHost) {
-                els.gameHostControls.classList.remove('hidden');
-            }
-            
-            // Update Trainer Card Visuals on the Right
-            updateTrainerCardUI();
-            
-            renderBingoCard();
-            els.caughtCount.textContent = '1';
-            
-            // Sync initial state to Firestore to allow opponents to see your card
-            if (state.roomId && state.userId) {
-                const roomRef = getRoomRef(state.roomId);
-                updateDoc(roomRef, {
-                    [`players.${state.userId}.card`]: state.localCard,
-                    [`players.${state.userId}.stamped`]: state.stampedCells
-                }).catch(err => console.error("Error syncing initial card:", err));
-            }
-        }
-
-        // Update the Right-side Trainer Card details
-        function updateTrainerCardUI() {
-            const trainer = TRAINERS.find(t => t.id === state.selectedTrainer) || TRAINERS[0];
-            document.getElementById('gameTrainerSprite').src = trainer.sprite;
-            document.getElementById('gameTrainerName').textContent = state.userName;
-            
-            const titles = ["Esploratore Poké", "Asso di Bingo", "Collezionista", "Campione Smeraldo", "Allenatore"];
-            const selectedTitle = titles[Math.floor(Math.random() * titles.length)];
-            
-            const badgeTitle = document.getElementById('gameTrainerTitle');
-            badgeTitle.textContent = selectedTitle;
-            badgeTitle.style.backgroundColor = state.cardColor;
-            
-            document.getElementById('trainerColorDot').style.backgroundColor = state.cardColor;
-            document.getElementById('trainerCardPanel').style.borderColor = state.cardColor;
-            document.getElementById('trainerCardCaughtCount').textContent = "0/24";
-            document.getElementById('trainerDialogue').textContent = `"Pronto per catturarli tutti in questo PokéBingo!"`;
-        }
-
-        function initPokedex() {
-            els.pokedexGrid.innerHTML = '';
-            els.dexCaughtCount.textContent = '151';
-            els.pokedexBadge.classList.add('hidden');
-
-            for (let i = 1; i <= POKEMON_MAX; i++) {
-                const p = pokemonCache[i];
-                if (!p) continue;
-                
-                const entry = document.createElement('div');
-                // The pokedex is now fully unlocked in the main menu
-                entry.className = 'pokedex-entry caught flex flex-col items-center p-2 bg-white rounded-2xl border-2 border-slate-200 shadow-sm relative overflow-hidden group hover:border-sky-400 hover:shadow-md hover:scale-105 transition-all cursor-pointer';
-                entry.id = `dex-entry-${i}`;
-                
-                entry.innerHTML = `
-                    <div class="absolute inset-0 bg-sky-500 opacity-0 group-hover:opacity-10 transition-opacity"></div>
-                    <img src="${p.sprite}" class="w-14 h-14 object-contain z-10 relative drop-shadow-md transform group-hover:scale-[1.15] transition-transform duration-300" onerror="this.src='https://placehold.co/100x100/eeeeee/444444?text=?'">
-                    <span class="text-[10px] md:text-xs font-black text-slate-400 mt-2 z-10 relative group-hover:text-sky-600 truncate w-full text-center px-1 transition-colors">#${i.toString().padStart(3,'0')} ${p.name}</span>
-                `;
-                
-                els.pokedexGrid.appendChild(entry);
-            }
-        }
-
-        function renderBingoCard() {
-            els.bingoGrid.innerHTML = '';
-            
-            const selectedBallObj = POKEBALLS.find(b => b.id === state.selectedBall) || POKEBALLS[0];
-            
-            state.localCard.forEach((pokeId, index) => {
-                const cell = document.createElement('div');
-                cell.className = 'bingo-cell';
-                
-                if (pokeId === 0) {
-                    cell.classList.add('free-space', 'marked');
-                    cell.innerHTML = `
-                        <img src="${selectedBallObj.sprite}" class="w-8 h-8 md:w-12 md:h-12 mb-1 drop-shadow-md" alt="Free Space">
-                        <span class="text-[9px] md:text-xs font-black uppercase tracking-tighter">FREE</span>
-                    `;
-                } else {
-                    const p = pokemonCache[pokeId];
-                    cell.dataset.id = pokeId;
-                    cell.dataset.index = index;
-                    
-                    cell.innerHTML = `
-                        <img src="${p?.sprite || ''}" class="w-12 h-12 md:w-16 md:h-16 object-contain pointer-events-none transition-transform" alt="${p?.name}" onerror="this.src='https://placehold.co/100x100/eeeeee/444444?text=?'">
-                        <span class="text-[9px] md:text-[10px] font-bold text-slate-500 mt-1 pointer-events-none truncate w-full px-1 text-center leading-none">${p?.name}</span>
-                        <div class="stamp-overlay absolute inset-0 bg-red-500/20 backdrop-blur-[1px] flex items-center justify-center opacity-0 pointer-events-none">
-                            <img src="${selectedBallObj.sprite}" class="w-10 h-10 opacity-90">
-                        </div>
-                    `;
-
-                    cell.addEventListener('click', () => handleCellClick(index, pokeId, cell));
-                }
-                
-                if (state.stampedCells[index] && pokeId !== 0) {
-                    cell.classList.add('marked');
-                    cell.querySelector('.stamp-overlay').classList.remove('opacity-0');
-                    cell.querySelector('.stamp-overlay').classList.add('opacity-100');
-                    cell.querySelector('img').classList.add('grayscale', 'opacity-50');
-                }
-
-                els.bingoGrid.appendChild(cell);
-            });
-        }
-
-        // Handle Pokémon click and stamp
-        function handleCellClick(index, pokeId, cellEl) {
-            if (state.stampedCells[index]) return;
-            if (!state.gameData?.drawnList?.includes(pokeId)) {
-                cellEl.classList.add('wobble');
-                setTimeout(() => cellEl.classList.remove('wobble'), 500);
-                return;
-            }
-
-            state.stampedCells[index] = true;
-            
-            cellEl.classList.remove('can-catch'); // Rimuove l'evidenziatura pulsante
-            cellEl.classList.add('marked');
-            const overlay = cellEl.querySelector('.stamp-overlay');
-            overlay.classList.remove('opacity-0');
-            overlay.classList.add('anim-stamp');
-            cellEl.querySelector('img').classList.add('grayscale', 'opacity-50');
-            
-            const count = state.stampedCells.filter(Boolean).length;
-            els.caughtCount.textContent = count;
-
-            // Sync stamp state to Firestore instantly
-            if (state.roomId && state.userId) {
-                const roomRef = getRoomRef(state.roomId);
-                updateDoc(roomRef, {
-                    [`players.${state.userId}.stamped`]: state.stampedCells
-                }).catch(err => console.error("Error syncing stamp:", err));
-            }
-
-            // Aggiungi 1 timbro alle statistiche globali
-            updateUserGlobalStats(0, 1);
-
-            // Update dialogue and caught stats dynamically
-            document.getElementById('trainerCardCaughtCount').textContent = `${count - 1}/24`;
-            
-            const funDialogues = [
-                `"Incredibile! Abbiamo catturato un nuovo Pokémon per la nostra collezione!"`,
-                `"Cattura fantastica! Sento che il BINGO è sempre più vicino!"`,
-                `"Perfetto! Un'altra mossa fantastica eseguita!"`,
-                `"Sì! La Pokéball non ha fallito!"`,
-                `"Ottimo tempismo, la nostra strategia sta funzionando!"`
-            ];
-            document.getElementById('trainerDialogue').textContent = funDialogues[Math.floor(Math.random() * funDialogues.length)];
-
-            checkWinCondition();
-        }
-
-        function checkWinCondition() {
-            const size = 5;
-            const grid = state.stampedCells;
-            let isWinner = false;
-
-            // Rows
-            for (let r = 0; r < size; r++) {
-                if (grid.slice(r*size, r*size + size).every(Boolean)) isWinner = true;
-            }
-            // Cols
-            for (let c = 0; c < size; c++) {
-                let colWin = true;
-                for (let r = 0; r < size; r++) if (!grid[r*size + c]) colWin = false;
-                if (colWin) isWinner = true;
-            }
-            // Diagonals
-            if ([0, 6, 12, 18, 24].every(i => grid[i])) isWinner = true;
-            if ([4, 8, 12, 16, 20].every(i => grid[i])) isWinner = true;
-
-            if (isWinner) {
-                declareWin();
-            }
-        }
-
-        async function declareWin() {
-            if (!state.userId) return;
-            const roomRef = getRoomRef(state.roomId);
-            try {
-                const snap = await getDoc(roomRef);
-                if (snap.exists() && !snap.data().winner) {
-                    await updateDoc(roomRef, {
-                        status: 'finished',
-                        winner: state.userId
-                    });
-                    
-                    // Aggiungi 1 vittoria alle statistiche globali
-                    updateUserGlobalStats(1, 0);
-                }
-            } catch(e) {
-                console.error("Failed to declare win", e);
-            }
-        }
-
-        async function drawNextPokemon() {
-            if (!state.isHost || !state.gameData) return;
-            const drawn = state.gameData.drawnList || [];
-            
-            const pool = [];
-            for (let i = 1; i <= POKEMON_MAX; i++) {
-                if (!drawn.includes(i)) pool.push(i);
-            }
-
-            if (pool.length === 0) {
-                showAlert("Finito", "Tutti i Pokémon sono stati estratti!");
-                return;
-            }
-
-            const randIndex = Math.floor(Math.random() * pool.length);
-            const newPokeId = pool[randIndex];
-            const newDrawnList = [...drawn, newPokeId];
-
-            els.btnDrawNext.disabled = true;
-            els.btnDrawNext.classList.add('opacity-50', 'cursor-not-allowed');
-
-            const roomRef = getRoomRef(state.roomId);
-            try {
-                await updateDoc(roomRef, {
-                    currentDraw: newPokeId,
-                    drawnList: newDrawnList
-                });
-            } catch(e) {
-                console.error("Draw error", e);
-            } finally {
-                setTimeout(() => {
-                    els.btnDrawNext.disabled = false;
-                    els.btnDrawNext.classList.remove('opacity-50', 'cursor-not-allowed');
-                }, 1000);
-            }
-        }
-
-        function updateGameUI(data) {
-            if (data.currentDraw) {
-                const p = pokemonCache[data.currentDraw];
-                if (p) {
-                    els.currentDrawContainer.innerHTML = `
-                        <div class="relative w-32 h-32 md:w-40 md:h-40 anim-pop">
-                            <div class="absolute inset-0 bg-yellow-400 rounded-full opacity-20 blur-xl animate-pulse"></div>
-                            <img src="${p.artwork}" class="w-full h-full object-contain relative z-10 drop-shadow-xl wobble" alt="${p.name}" onerror="this.style.opacity='0'">
-                        </div>
-                        <div class="mt-4 flex flex-col items-center anim-pop">
-                            <span class="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md mb-1">#${p.id.toString().padStart(3, '0')}</span>
-                            <h2 class="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">${p.name}</h2>
-                        </div>
-                    `;
-                }
-            }
-
-            if (data.drawnList && data.drawnList.length > 0) {
-                els.drawnHistoryList.innerHTML = '';
-                [...data.drawnList].reverse().forEach(id => {
-                    const p = pokemonCache[id];
-                    if(!p) return;
-                    const el = document.createElement('div');
-                    el.className = "flex-shrink-0 w-12 h-12 bg-slate-50 border border-slate-200 rounded-lg p-1 flex items-center justify-center anim-pop relative group";
-                    el.innerHTML = `
-                        <img src="${p.sprite}" class="w-full h-full object-contain" alt="${p.name}" onerror="this.style.opacity='0'">
-                        <div class="absolute -bottom-8 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap z-50 pointer-events-none font-bold shadow-md">
-                            ${p.name}
-                        </div>
-                    `;
-                    els.drawnHistoryList.appendChild(el);
-                });
-            }
-
-            // Evidenzia i Pokémon estratti e non ancora catturati nella propria scheda
-            if (data.drawnList && data.drawnList.length > 0) {
-                const cells = els.bingoGrid.querySelectorAll('.bingo-cell');
-                state.localCard.forEach((pokeId, index) => {
-                    if (pokeId === 0) return; // Salta lo spazio centrale
-                    const cellEl = cells[index];
-                    if (cellEl) {
-                        if (data.drawnList.includes(pokeId) && !state.stampedCells[index]) {
-                            cellEl.classList.add('can-catch');
-                        } else {
-                            cellEl.classList.remove('can-catch');
-                        }
-                    }
-                });
-            }
-        }
-
-        function showWinScreen(winnerId, winnerName) {
-            document.getElementById('winnerNameDisplay').textContent = winnerName;
-            document.getElementById('winModal').classList.remove('hidden');
-        }
-
-        function renderOpponents(data) {
-            const grid = document.getElementById('opponentsGrid');
-            if (!grid) return;
-            grid.innerHTML = '';
-            
-            let hasOpponents = false;
-
-            Object.entries(data.players || {}).forEach(([pId, p]) => {
-                if (pId === state.userId) return; // Hide ourselves from the opponents list
-                hasOpponents = true;
-                
-                const trainerObj = TRAINERS.find(t => t.id === p.trainer) || TRAINERS[0];
-                const pColor = p.color || '#ef4444';
-                const pBall = POKEBALLS.find(b => b.id === (p.ball || 'poke-ball')) || POKEBALLS[0];
-                const caughtCount = (p.stamped || []).filter(Boolean).length;
-                
-                const cardEl = document.createElement('div');
-                cardEl.className = 'flex flex-col items-center p-3 bg-white border-2 rounded-2xl shadow-sm transition-transform hover:scale-105 w-[140px]';
-                cardEl.style.borderColor = pColor;
-                
-                let miniGridHtml = '';
-                if (p.card && p.stamped) {
-                    p.card.forEach((pokeId, i) => {
-                        let cellColor = p.stamped[i] ? pColor : '#f8fafc';
-                        let inner = '';
-                        if (pokeId === 0) {
-                            cellColor = pColor; // Free space
-                            inner = `<img src="${pBall.sprite}" class="w-full h-full object-contain drop-shadow-sm scale-110 opacity-70">`;
-                        } else if (p.stamped[i]) {
-                            inner = `<img src="${pBall.sprite}" class="w-full h-full object-contain drop-shadow-sm scale-110">`;
-                        }
-                        miniGridHtml += `<div class="w-4 h-4 rounded-[3px] border border-slate-200/50 shadow-inner flex items-center justify-center overflow-hidden" style="background-color: ${cellColor}">${inner}</div>`;
-                    });
-                } else {
-                    miniGridHtml = `<div class="text-[10px] text-slate-400 py-4 w-full text-center">Scheda in attesa...</div>`;
-                }
-                
-                cardEl.innerHTML = `
-                    <div class="flex items-center gap-2 mb-2 w-full">
-                        <img src="${trainerObj.sprite}" class="w-8 h-8 object-contain bg-slate-50 rounded-full border border-slate-200 shrink-0">
-                        <div class="flex flex-col flex-1 overflow-hidden">
-                            <span class="font-bold text-xs text-slate-700 truncate w-full" title="${p.name}">${p.name}</span>
-                            <div class="flex items-center gap-1">
-                                <span class="text-[9px] text-slate-500 uppercase font-bold">Punti: <span style="color:${pColor}" class="font-black">${caughtCount}</span></span>
-                                <img src="${pBall.sprite}" class="w-3 h-3 object-contain">
+                    <div class="p-6 flex-grow flex flex-col">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="text-4xl bg-slate-800 p-3 rounded-xl border border-slate-700 shadow-inner">
+                                ${game.emoji}
+                            </div>
+                            <div class="text-slate-500 group-hover:text-primary transition-colors">
+                                <i data-lucide="external-link" class="w-5 h-5"></i>
                             </div>
                         </div>
+                        
+                        <h3 class="text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors">
+                            ${game.title}
+                        </h3>
+                        
+                        <p class="text-slate-400 text-sm mb-6 flex-grow">
+                            ${game.description}
+                        </p>
+                        
+                        <div class="flex flex-wrap gap-2 mt-auto">
+                            ${generateTags(game.tags)}
+                        </div>
                     </div>
-                    <div class="grid grid-cols-5 gap-[2px] w-full bg-slate-100 p-1.5 rounded-xl border border-slate-200">
-                        ${miniGridHtml}
-                    </div>
+                    <!-- Hover overlay -->
+                    <div class="absolute inset-0 bg-gradient-to-t from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
                 `;
-                grid.appendChild(cardEl);
+                gridContainer.appendChild(card);
             });
-            
-            if (!hasOpponents) {
-                grid.innerHTML = '<div class="text-slate-400 text-sm italic py-2">Nessun avversario in questa partita. Invita i tuoi amici!</div>';
+
+            // Re-inizializza le icone per i nuovi elementi DOM
+            lucide.createIcons();
+        }
+
+        // Inizializza la visualizzazione iniziale
+        renderGames(myGames);
+
+        // Gestione della barra di ricerca
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredGames = myGames.filter(game => {
+                return game.title.toLowerCase().includes(searchTerm) || 
+                       game.description.toLowerCase().includes(searchTerm) ||
+                       game.tags.some(tag => tag.toLowerCase().includes(searchTerm));
+            });
+            renderGames(filteredGames);
+        });
+
+    </script>
+
+    <!-- Caricamento API YouTube -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+
+    <!-- Logica della Radio & Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, updateDoc, increment, deleteDoc, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Configurazione Firebase Ufficiale
+        let firebaseConfig;
+        try {
+            firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        } catch(e) {}
+
+        if (!firebaseConfig) {
+            firebaseConfig = {
+                apiKey: "AIzaSyCMreirk7ijjbzbJ1dIfuJ9IkTKGIW7sYM",
+                authDomain: "hub-giochi-simo.firebaseapp.com",
+                projectId: "hub-giochi-simo",
+                storageBucket: "hub-giochi-simo.firebasestorage.app",
+                messagingSenderId: "920363266969",
+                appId: "1:920363266969:web:0db5cda43c94ef4405d908",
+                measurementId: "G-DC1HW2LS8P"
+            };
+        }
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        // Inizializzazione Analytics rimossa per evitare l'errore 404 "App not found"
+        // che si verifica quando la configurazione di Firebase non ha Analytics abilitato
+        
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'hub-giochi-simo';
+
+        // Elementi DOM Radio
+        const radioInputContainer = document.getElementById('radioInputContainer');
+        const ytUrlInput = document.getElementById('ytUrlInput');
+        const addSongBtn = document.getElementById('addSongBtn');
+        const removeSongBtn = document.getElementById('removeSongBtn');
+        const songCount = document.getElementById('songCount');
+        const radioMaxReached = document.getElementById('radioMaxReached');
+        
+        const radioControls = document.getElementById('radioControls');
+        const playRadioBtn = document.getElementById('playRadioBtn');
+        const playIcon = document.getElementById('playIcon');
+        const playText = document.getElementById('playText');
+        const skipRadioBtn = document.getElementById('skipRadioBtn');
+        const skipText = document.getElementById('skipText');
+        const muteBtn = document.getElementById('muteBtn');
+        const volumeIcon = document.getElementById('volumeIcon');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const volDownBtn = document.getElementById('volDownBtn');
+        const volUpBtn = document.getElementById('volUpBtn');
+
+        // --- Elementi DOM Votazione ---
+        const votingModal = document.getElementById('votingModal');
+        const closeVoteBtn = document.getElementById('closeVoteBtn');
+        const voteGrid = document.getElementById('voteGrid');
+        const voteTimer = document.getElementById('voteTimer');
+        const winnerModal = document.getElementById('winnerModal');
+        const winnerEmoji = document.getElementById('winnerEmoji');
+        const winnerName = document.getElementById('winnerName');
+        const winnerStatusText = document.getElementById('winnerStatusText');
+        const manualJoinBtn = document.getElementById('manualJoinBtn');
+
+        let ytPlayer = null;
+        let currentPlaylist = [];
+        let isPlayerReady = false;
+        let isPlaying = false;
+        let isMuted = false;
+
+        // Variabili per il sistema di skip
+        let currentOnlineCount = 1;
+        let currentSkipVoters = [];
+        let lastSkipActionTime = 0;
+        let userAuth = null;
+
+        // Inizializza YouTube Player
+        window.onYouTubeIframeAPIReady = () => {
+            ytPlayer = new YT.Player('ytplayer', {
+                height: '0',
+                width: '0',
+                playerVars: {
+                    'controls': 0,
+                    'loop': 1,
+                    'playsinline': 1
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange,
+                    'onError': (e) => console.error("Errore YT Player:", e.data)
+                }
+            });
+        };
+
+        function onPlayerReady(event) {
+            isPlayerReady = true;
+            ytPlayer.setVolume(volumeSlider.value); 
+            if (currentPlaylist.length > 0) {
+                radioControls.classList.remove('hidden');
+                radioControls.classList.add('flex');
+                loadPlaylistIntoPlayer();
             }
         }
 
-        // --- BUTTONS & INTERACTION EVENTS ---
-        els.btnCreateRoom.addEventListener('click', () => {
-            const code = generateRoomCode();
-            joinRoomAction(code, true);
-        });
-
-        els.btnJoinRoom.addEventListener('click', () => {
-            const code = els.inputRoomCode.value.trim().toUpperCase();
-            if (code.length !== 5) {
-                showAlert("Codice Errato", "Il codice della stanza deve essere di 5 lettere.");
-                return;
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.PLAYING) {
+                isPlaying = true;
+                playIcon.setAttribute('data-lucide', 'pause');
+                playText.innerText = "Pausa";
+                playRadioBtn.classList.remove('bg-slate-700', 'hover:bg-slate-600');
+                playRadioBtn.classList.add('bg-green-600', 'hover:bg-green-500');
+            } else if (event.data === YT.PlayerState.PAUSED) {
+                isPlaying = false;
+                playIcon.setAttribute('data-lucide', 'play');
+                playText.innerText = "Riprendi";
+                playRadioBtn.classList.add('bg-slate-700', 'hover:bg-slate-600');
+                playRadioBtn.classList.remove('bg-green-600', 'hover:bg-green-500');
+            } else if (event.data === YT.PlayerState.ENDED) {
+                ytPlayer.playVideoAt(0);
             }
-            joinRoomAction(code, false);
-        });
+            lucide.createIcons();
+        }
 
-        els.btnStartGame.addEventListener('click', startGlobalGame);
-        els.btnDrawNext.addEventListener('click', drawNextPokemon);
+        function loadPlaylistIntoPlayer() {
+            if (isPlayerReady && ytPlayer && currentPlaylist.length > 0) {
+                const currentIdx = ytPlayer.getPlaylistIndex ? Math.max(0, ytPlayer.getPlaylistIndex()) : 0;
+                const existingPlaylist = ytPlayer.getPlaylist ? ytPlayer.getPlaylist() : null;
+                if (!existingPlaylist || existingPlaylist.length !== currentPlaylist.length) {
+                    ytPlayer.loadPlaylist({
+                        playlist: currentPlaylist,
+                        index: currentIdx
+                    });
+                    ytPlayer.setLoop(true);
+                    
+                    if (!isPlaying) {
+                        ytPlayer.playVideo();
+                    }
+                }
+            }
+        }
 
-        els.btnCopyCode.addEventListener('click', () => {
-            const code = els.lobbyRoomCode.textContent;
-            const textArea = document.createElement("textarea");
-            textArea.value = code;
-            document.body.appendChild(textArea);
-            textArea.select();
+        function extractVideoID(url) {
+            let videoId = null;
             try {
-                document.execCommand('copy');
-                els.btnCopyCode.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`;
-                setTimeout(() => {
-                    els.btnCopyCode.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>`;
-                }, 2000);
-            } catch (err) {
-                console.error('Copy failed', err);
-            }
-            document.body.removeChild(textArea);
-        });
+                if (url.includes('youtu.be/')) {
+                    videoId = url.split('youtu.be/')[1].split(/[?#]/)[0];
+                } else if (url.includes('youtube.com/watch')) {
+                    const urlParams = new URLSearchParams(new URL(url).search);
+                    videoId = urlParams.get('v');
+                } else if (url.includes('youtube.com/shorts/')) {
+                    videoId = url.split('youtube.com/shorts/')[1].split(/[?#]/)[0];
+                } else {
+                    const match = url.match(/(?:youtube\.com\/(?:embed\/|v\/))([^#\&\?]*).*/);
+                    if (match && match[1].length >= 10) videoId = match[1];
+                }
+            } catch(e) {}
+            return videoId;
+        }
 
-        // --- SISTEMA CLASSIFICA GLOBALE ---
-        async function loadAndShowLeaderboard() {
-            els.leaderboardModal.classList.remove('hidden');
-            setTimeout(() => {
-                els.leaderboardModal.classList.remove('opacity-0');
-                els.leaderboardModalContent.classList.remove('scale-95');
-                els.leaderboardModalContent.classList.add('scale-100');
-            }, 10);
-
-            els.leaderboardLoading.classList.remove('hidden');
-            els.leaderboardContainer.classList.add('hidden');
-            
-            if (!state.userId) {
-                els.leaderboardLoading.textContent = "Errore di accesso al server.";
-                return;
-            }
-
+        const initAuth = async () => {
+            let user;
             try {
-                const statsRef = collection(db, 'artifacts', appId, 'public', 'data', 'userStats');
-                const querySnapshot = await getDocs(statsRef);
-                
-                let allUsers = [];
-                querySnapshot.forEach(doc => {
-                    allUsers.push({ id: doc.id, ...doc.data() });
-                });
-
-                // Ordina per Vittorie (Top 10)
-                const topWins = [...allUsers].sort((a, b) => (b.wins || 0) - (a.wins || 0)).slice(0, 10);
-                
-                // Ordina per Timbri (Top 10)
-                const topStamps = [...allUsers].sort((a, b) => (b.stamps || 0) - (a.stamps || 0)).slice(0, 10);
-
-                renderLeaderboardList(els.winsList, topWins, 'wins', 'Vittorie');
-                renderLeaderboardList(els.stampsList, topStamps, 'stamps', 'Timbri');
-
-                els.leaderboardLoading.classList.add('hidden');
-                els.leaderboardContainer.classList.remove('hidden');
-
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    const cred = await signInWithCustomToken(auth, __initial_auth_token);
+                    user = cred.user;
+                } else {
+                    const cred = await signInAnonymously(auth);
+                    user = cred.user;
+                }
+                userAuth = user;
             } catch (error) {
-                console.error("Errore nel caricamento della classifica:", error);
-                els.leaderboardLoading.textContent = "Errore nel caricamento dei dati.";
-            }
-        }
-
-        function renderLeaderboardList(containerEl, data, field, unit) {
-            containerEl.innerHTML = '';
-            if (data.length === 0) {
-                containerEl.innerHTML = '<div class="text-sm italic text-slate-400 p-2">Nessun dato disponibile.</div>';
+                console.error("ERRORE CRITICO", error);
                 return;
             }
-
-            data.forEach((user, index) => {
-                const val = user[field] || 0;
-                if (val === 0 && index > 0) return; // Nascondi zeri in eccesso
+            
+            const playlistRef = doc(db, 'artifacts', appId, 'public', 'data', 'radioData', 'playlist');
+            
+            onSnapshot(playlistRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    currentPlaylist = docSnap.data().songs || [];
+                } else {
+                    currentPlaylist = [];
+                }
                 
-                const trainerObj = TRAINERS.find(t => t.id === user.trainer) || TRAINERS[0];
-                const rankColor = index === 0 ? 'bg-yellow-400 text-yellow-900 border-yellow-500' : 
-                                  index === 1 ? 'bg-slate-300 text-slate-800 border-slate-400' :
-                                  index === 2 ? 'bg-amber-600 text-amber-100 border-amber-700' : 'bg-slate-100 text-slate-500 border-slate-200';
-
-                const row = document.createElement('div');
-                row.className = "flex items-center gap-3 bg-slate-50 p-2 rounded-xl border border-slate-200 shadow-sm transition hover:scale-[1.02]";
-                row.innerHTML = `
-                    <div class="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs border-2 shadow-inner shrink-0 ${rankColor}">
-                        #${index + 1}
-                    </div>
-                    <img src="${trainerObj.sprite}" class="w-10 h-10 object-contain bg-white rounded-full border border-slate-200 shadow-inner shrink-0" onerror="this.src='https://placehold.co/40x40/ef4444/ffffff?text=T'">
-                    <div class="flex-1 overflow-hidden">
-                        <div class="font-bold text-slate-800 text-sm truncate">${user.name || 'Allenatore'}</div>
-                        <div class="text-[10px] text-slate-400 uppercase tracking-wider">${trainerObj.name}</div>
-                    </div>
-                    <div class="font-black text-lg text-slate-700 shrink-0 px-2 text-right">
-                        ${val} <span class="text-[10px] font-bold text-slate-400 uppercase block leading-none">${unit}</span>
-                    </div>
-                `;
-                containerEl.appendChild(row);
-            });
-        }
-
-        els.btnOpenLeaderboard.addEventListener('click', loadAndShowLeaderboard);
-
-        els.btnCloseLeaderboard.addEventListener('click', () => {
-            els.leaderboardModal.classList.add('opacity-0');
-            els.leaderboardModalContent.classList.remove('scale-100');
-            els.leaderboardModalContent.classList.add('scale-95');
-            setTimeout(() => els.leaderboardModal.classList.add('hidden'), 300);
-        });
-
-        els.btnOpenPokedex.addEventListener('click', () => {
-            els.pokedexModal.classList.remove('hidden');
-            setTimeout(() => {
-                els.pokedexModal.classList.remove('opacity-0');
-                els.pokedexModalContent.classList.remove('scale-95');
-                els.pokedexModalContent.classList.add('scale-100');
-            }, 10);
-        });
-
-        els.btnClosePokedex.addEventListener('click', () => {
-            els.pokedexModal.classList.add('opacity-0');
-            els.pokedexModalContent.classList.remove('scale-100');
-            els.pokedexModalContent.classList.add('scale-95');
-            setTimeout(() => els.pokedexModal.classList.add('hidden'), 300);
-        });
-
-        document.getElementById('btnBackToMenu').addEventListener('click', () => {
-            document.getElementById('winModal').classList.add('hidden');
-            if (unsubscribeRoom) unsubscribeRoom();
-            switchScreen('login');
-            els.currentDrawContainer.innerHTML = `<div class="text-slate-400 font-bold mb-4">In attesa dell'estrazione...</div>`;
-            els.drawnHistoryList.innerHTML = `<div class="text-slate-300 text-sm italic">Nessuno...</div>`;
-            els.playerBadge.classList.add('hidden');
-        });
-
-        // App Initialization
-        async function init() {
-            initTrainerSelectorUI();
-            await loadPokemonData();
-            initPokedex(); // Pokedex is instantly available for the Main Menu
-            
-            // Autenticazione Firebase Obbligatoria Iniziale prima di ogni cosa
-            await initAuth();
-            
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    state.userId = user.uid;
+                updateRadioUI();
+                
+                if (isPlayerReady) {
+                    if (currentPlaylist.length > 0) {
+                        radioControls.classList.remove('hidden');
+                        radioControls.classList.add('flex');
+                        loadPlaylistIntoPlayer();
+                    } else {
+                        // Ferma la musica se la playlist viene svuotata
+                        radioControls.classList.add('hidden');
+                        radioControls.classList.remove('flex');
+                        if (ytPlayer && ytPlayer.stopVideo) {
+                            ytPlayer.stopVideo();
+                            isPlaying = false;
+                            playIcon.setAttribute('data-lucide', 'play');
+                            playText.innerText = "Avvia";
+                            playRadioBtn.classList.add('bg-slate-700', 'hover:bg-slate-600');
+                            playRadioBtn.classList.remove('bg-green-600', 'hover:bg-green-500');
+                            lucide.createIcons();
+                        }
+                    }
                 }
             });
 
-            switchScreen('login');
-            console.log("PokéBingo Ready & Patched!");
+            const votingRef = doc(db, 'artifacts', appId, 'public', 'data', 'voting', 'state');
+            let timerInterval;
+            let hasVotedLocally = false;
+            let lastProcessedWinnerId = null;
+            let currentVoteEndTime = null;
+            let hasClosedVoteLocally = false;
+
+            closeVoteBtn.addEventListener('click', () => {
+                hasClosedVoteLocally = true;
+                votingModal.classList.add('hidden');
+                votingModal.classList.remove('flex');
+            });
+
+            onSnapshot(votingRef, (docSnap) => {
+                const data = docSnap.data();
+                if (!data) return;
+
+                const now = Date.now();
+                if (data.isActive && data.endTime > now) {
+                    
+                    if (currentVoteEndTime !== data.endTime) {
+                        currentVoteEndTime = data.endTime;
+                        hasClosedVoteLocally = false;
+                        hasVotedLocally = false;
+                    }
+
+                    if (!hasClosedVoteLocally) {
+                        votingModal.classList.remove('hidden');
+                        votingModal.classList.add('flex');
+                    }
+                    
+                    winnerModal.classList.add('hidden');
+                    winnerModal.classList.remove('flex');
+                    
+                    renderVotingGrid(data.votes || {}, hasVotedLocally);
+                    
+                    clearInterval(timerInterval);
+                    timerInterval = setInterval(() => {
+                        const timeLeft = Math.max(0, Math.floor((data.endTime - Date.now()) / 1000));
+                        voteTimer.innerText = `00:${timeLeft.toString().padStart(2, '0')}`;
+                        if (timeLeft === 0) {
+                            clearInterval(timerInterval);
+                            if(isAdmin) chiudiVotazioneEProclamaVincitore(data.votes || {});
+                        }
+                    }, 1000);
+                } else if (!data.isActive && data.winnerId && data.winnerId !== lastProcessedWinnerId) {
+                    clearInterval(timerInterval);
+                    votingModal.classList.add('hidden');
+                    votingModal.classList.remove('flex');
+                    hasVotedLocally = false;
+                    lastProcessedWinnerId = data.winnerId;
+                    
+                    if (now - data.endTime < 30000) {
+                        mostraVincitore(data.winnerId);
+                    }
+                } else if (!data.isActive) {
+                     clearInterval(timerInterval);
+                     votingModal.classList.add('hidden');
+                     votingModal.classList.remove('flex');
+                     winnerModal.classList.add('hidden');
+                     winnerModal.classList.remove('flex');
+                }
+            });
+
+            function renderVotingGrid(votesMap, disableButtons) {
+                voteGrid.innerHTML = '';
+                myGames.forEach(game => {
+                    const votes = votesMap[game.id] || 0;
+                    const btn = document.createElement('button');
+                    btn.className = `p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all ${disableButtons ? 'border-slate-700 bg-slate-800/80 opacity-50 cursor-not-allowed' : 'border-slate-600 bg-slate-800 hover:border-orange-500 hover:bg-slate-700'}`;
+                    btn.innerHTML = `
+                        <span class="text-4xl mb-2">${game.emoji}</span>
+                        <span class="font-bold text-white text-center text-sm">${game.title}</span>
+                        <span class="text-orange-400 font-black text-2xl mt-1">${votes}</span>
+                    `;
+                    if (!disableButtons) {
+                        btn.onclick = async () => {
+                            hasVotedLocally = true;
+                            renderVotingGrid(votesMap, true);
+                            await updateDoc(votingRef, {
+                                [`votes.${game.id}`]: increment(1)
+                            }).catch(() => {});
+                        };
+                    }
+                    voteGrid.appendChild(btn);
+                });
+            }
+
+            async function chiudiVotazioneEProclamaVincitore(votesMap) {
+                let winnerId = null;
+                let maxVotes = -1;
+                for (const [gameId, votes] of Object.entries(votesMap)) {
+                    if (votes > maxVotes) {
+                        maxVotes = votes;
+                        winnerId = parseInt(gameId);
+                    }
+                }
+                if (winnerId === null && myGames.length > 0) winnerId = myGames[0].id; 
+                try {
+                    await updateDoc(votingRef, { isActive: false, winnerId: winnerId });
+                } catch(e) {}
+            }
+
+            function mostraVincitore(gameId) {
+                const game = myGames.find(g => g.id === gameId);
+                if (!game) return;
+                winnerEmoji.innerText = game.emoji;
+                winnerName.innerText = game.title;
+                manualJoinBtn.href = game.url;
+                winnerStatusText.classList.remove('hidden');
+                manualJoinBtn.classList.add('hidden');
+                winnerModal.classList.remove('hidden');
+                winnerModal.classList.add('flex');
+                setTimeout(() => {
+                    try {
+                        const newWindow = window.open(game.url, '_blank');
+                        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+                            winnerStatusText.classList.add('hidden');
+                            manualJoinBtn.classList.remove('hidden');
+                        } else {
+                            winnerStatusText.innerText = "Gioco aperto in un'altra scheda!";
+                            setTimeout(() => {
+                                winnerModal.classList.add('hidden');
+                                winnerModal.classList.remove('flex');
+                            }, 4000);
+                        }
+                    } catch (e) {
+                        winnerStatusText.classList.add('hidden');
+                        manualJoinBtn.classList.remove('hidden');
+                    }
+                }, 3000);
+            }
+
+            // Permetti di avviare il voto solo se isAdmin
+            if (isAdmin) {
+                startVoteBtn.addEventListener('click', async () => {
+                    const durationMs = 15000;
+                    const initialVotes = {};
+                    myGames.forEach(g => initialVotes[g.id] = 0);
+                    try {
+                        await setDoc(votingRef, {
+                            isActive: true, endTime: Date.now() + durationMs, votes: initialVotes, winnerId: null
+                        });
+                    } catch(e) {}
+                });
+            }
+
+            // --- 3. Tracciamento Giocatori Online e Sistema Skip ---
+            if (user) {
+                const uid = user.uid;
+                const presenceDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'presence', uid);
+                
+                const updatePresence = () => {
+                    setDoc(presenceDocRef, { lastSeen: Date.now() }).catch(() => {});
+                };
+                updatePresence();
+                setInterval(updatePresence, 15000);
+
+                window.addEventListener('beforeunload', () => {
+                    deleteDoc(presenceDocRef).catch(() => {});
+                });
+
+                const presenceCollRef = collection(db, 'artifacts', appId, 'public', 'data', 'presence');
+                onSnapshot(presenceCollRef, (snapshot) => {
+                    const now = Date.now();
+                    let count = 0;
+                    snapshot.forEach(docSnap => {
+                        const data = docSnap.data();
+                        if (now - data.lastSeen < 30000) count++;
+                    });
+                    currentOnlineCount = Math.max(1, count);
+                    const countEl = document.getElementById('onlineCount');
+                    if (countEl) countEl.innerText = currentOnlineCount;
+                    updateSkipUI();
+                });
+
+                const skipRef = doc(db, 'artifacts', appId, 'public', 'data', 'radioData', 'skipState');
+                onSnapshot(skipRef, (snap) => {
+                    if (snap.exists()) {
+                        currentSkipVoters = snap.data().voters || [];
+                    } else {
+                        currentSkipVoters = [];
+                    }
+                    updateSkipUI();
+                    checkSkipCondition(skipRef);
+                });
+
+                const actionRef = doc(db, 'artifacts', appId, 'public', 'data', 'radioData', 'action');
+                onSnapshot(actionRef, (snap) => {
+                    if (snap.exists()) {
+                        const data = snap.data();
+                        if (data.type === 'skip' && data.timestamp > lastSkipActionTime) {
+                            lastSkipActionTime = data.timestamp;
+                            if (Date.now() - data.timestamp < 5000) {
+                                if (ytPlayer && isPlayerReady) {
+                                    ytPlayer.nextVideo();
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                skipRadioBtn.addEventListener('click', async () => {
+                    if (currentSkipVoters.includes(user.uid) || currentPlaylist.length === 0) return;
+                    
+                    const newVoters = [...currentSkipVoters, user.uid];
+                    try {
+                        await setDoc(skipRef, { voters: newVoters }, { merge: true });
+                    } catch(e) {}
+                });
+                
+                function checkSkipCondition(skipRef) {
+                    const requiredVotes = Math.max(1, Math.ceil(currentOnlineCount / 2));
+                    if (currentSkipVoters.length >= requiredVotes && requiredVotes > 0) {
+                        setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'radioData', 'action'), { 
+                            type: 'skip', 
+                            timestamp: Date.now() 
+                        }).catch(()=>{});
+                        
+                        setDoc(skipRef, { voters: [] }).catch(()=>{});
+                    }
+                }
+            }
+        };
+
+        function updateSkipUI() {
+            const requiredVotes = Math.max(1, Math.ceil(currentOnlineCount / 2));
+            skipText.innerText = `${currentSkipVoters.length}/${requiredVotes}`;
+            
+            if (userAuth && currentSkipVoters.includes(userAuth.uid)) {
+                skipRadioBtn.classList.add('text-orange-400');
+                skipRadioBtn.classList.remove('text-white');
+            } else {
+                skipRadioBtn.classList.remove('text-orange-400');
+                skipRadioBtn.classList.add('text-white');
+            }
         }
 
-        init();
+        // Funzione modificata per nascondere l'inserimento canzoni a chi non è admin
+        function updateRadioUI() {
+            songCount.innerText = `${currentPlaylist.length}/5 brani`;
+            
+            if (isAdmin) {
+                if (currentPlaylist.length >= 5) {
+                    radioInputContainer.classList.add('hidden');
+                    radioMaxReached.classList.remove('hidden');
+                    radioMaxReached.innerText = "✨ Playlist completata! In loop.";
+                } else {
+                    radioInputContainer.classList.remove('hidden');
+                    radioMaxReached.classList.add('hidden');
+                }
+                
+                // Mostra/Nascondi tasto Rimuovi Canzone
+                if (currentPlaylist.length > 0) {
+                    removeSongBtn.classList.remove('hidden');
+                    removeSongBtn.classList.add('flex');
+                } else {
+                    removeSongBtn.classList.add('hidden');
+                    removeSongBtn.classList.remove('flex');
+                }
+            } else {
+                radioInputContainer.classList.add('hidden');
+                radioMaxReached.classList.remove('hidden');
+                radioMaxReached.innerHTML = "🎵 Playlist gestita dall'Host.";
+                removeSongBtn.classList.add('hidden');
+                removeSongBtn.classList.remove('flex');
+            }
+            lucide.createIcons();
+        }
+
+        // Permetti l'aggiunta e la rimozione di canzoni solo se isAdmin
+        if (isAdmin) {
+            addSongBtn.addEventListener('click', async () => {
+                const url = ytUrlInput.value.trim();
+                const videoId = extractVideoID(url);
+                
+                if (!videoId) {
+                    ytUrlInput.value = '';
+                    ytUrlInput.placeholder = "⚠️ Link non valido! Riprova.";
+                    setTimeout(() => ytUrlInput.placeholder = "Incolla URL di YouTube...", 3000);
+                    return;
+                }
+                
+                if (currentPlaylist.length >= 5) return;
+                
+                const originalText = addSongBtn.innerHTML;
+                addSongBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Salvataggio...';
+                lucide.createIcons();
+                
+                const newPlaylist = [...currentPlaylist, videoId];
+                const playlistRef = doc(db, 'artifacts', appId, 'public', 'data', 'radioData', 'playlist');
+                
+                try {
+                    await setDoc(playlistRef, { songs: newPlaylist });
+                    ytUrlInput.value = '';
+                    ytUrlInput.placeholder = "✅ Aggiunta con successo!";
+                    setTimeout(() => ytUrlInput.placeholder = "Incolla URL di YouTube...", 2000);
+                } catch (error) {
+                    console.error("Errore salvataggio:", error);
+                    ytUrlInput.placeholder = "❌ Errore di salvataggio";
+                }
+                addSongBtn.innerHTML = originalText;
+                lucide.createIcons();
+            });
+
+            removeSongBtn.addEventListener('click', async () => {
+                if (currentPlaylist.length === 0) return;
+                
+                const originalText = removeSongBtn.innerHTML;
+                removeSongBtn.innerHTML = '<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> Rimozione...';
+                lucide.createIcons();
+                
+                const newPlaylist = currentPlaylist.slice(0, -1); // Rimuove l'ultimo elemento
+                const playlistRef = doc(db, 'artifacts', appId, 'public', 'data', 'radioData', 'playlist');
+                
+                try {
+                    await setDoc(playlistRef, { songs: newPlaylist });
+                } catch (error) {
+                    console.error("Errore rimozione:", error);
+                }
+                removeSongBtn.innerHTML = originalText;
+                lucide.createIcons();
+            });
+        }
+
+        playRadioBtn.addEventListener('click', () => {
+            if (ytPlayer && isPlayerReady) {
+                if (isPlaying) {
+                    ytPlayer.pauseVideo();
+                } else {
+                    ytPlayer.playVideo();
+                }
+            }
+        });
+
+        function changeVolume(newVol) {
+            if (ytPlayer && isPlayerReady) {
+                newVol = Math.max(0, Math.min(100, newVol));
+                volumeSlider.value = newVol;
+                ytPlayer.setVolume(newVol);
+                
+                if (newVol == 0) {
+                    volumeIcon.setAttribute('data-lucide', 'volume-x');
+                    isMuted = true;
+                } else if (newVol < 50) {
+                    volumeIcon.setAttribute('data-lucide', 'volume-1');
+                    isMuted = false;
+                } else {
+                    volumeIcon.setAttribute('data-lucide', 'volume-2');
+                    isMuted = false;
+                }
+                
+                if (isMuted && newVol > 0) {
+                    ytPlayer.unMute();
+                    isMuted = false;
+                }
+                lucide.createIcons();
+            }
+        }
+
+        volDownBtn.addEventListener('click', () => changeVolume(parseInt(volumeSlider.value) - 10));
+        volUpBtn.addEventListener('click', () => changeVolume(parseInt(volumeSlider.value) + 10));
+
+        volumeSlider.addEventListener('input', (e) => {
+            changeVolume(parseInt(e.target.value));
+        });
+
+        muteBtn.addEventListener('click', () => {
+            if (ytPlayer && isPlayerReady) {
+                if (isMuted) {
+                    ytPlayer.unMute();
+                    ytPlayer.setVolume(volumeSlider.value);
+                    volumeIcon.setAttribute('data-lucide', volumeSlider.value < 50 ? 'volume-1' : 'volume-2');
+                    isMuted = false;
+                } else {
+                    ytPlayer.mute();
+                    volumeIcon.setAttribute('data-lucide', 'volume-x');
+                    isMuted = true;
+                }
+                lucide.createIcons();
+            }
+        });
+
+        initAuth();
     </script>
 </body>
 </html>
