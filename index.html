@@ -897,6 +897,7 @@
             }
 
             if (!state.userId) {
+                // IL PROBLEMA ERA QUI: usa initAuth() invece di authenticateUser()
                 const authed = await initAuth();
                 if (!authed) return;
             }
